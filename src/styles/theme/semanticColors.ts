@@ -53,6 +53,21 @@ type SemanticColors = {
     default: string;
     text: string;
   };
+  border: {
+    subtle: string;
+    default: string;
+    strong: string;
+    focus: string;
+  };
+  overlay: {
+    scrim: string;
+  };
+  navigation: {
+    active: string;
+    inactive: string;
+    surface: string;
+    rail: string;
+  };
 };
 
 export const lightColors = {
@@ -108,6 +123,21 @@ export const lightColors = {
     default: palette.brand.primary,
     text: palette.cyan[700],
   },
+  border: {
+    subtle: palette.navy[100],
+    default: palette.navy[200],
+    strong: palette.navy[300],
+    focus: palette.brand.primary,
+  },
+  overlay: {
+    scrim: '#06133A80',
+  },
+  navigation: {
+    active: palette.brand.primary,
+    inactive: palette.navy[400],
+    surface: palette.pure.white,
+    rail: palette.cyan[50],
+  },
 } as const satisfies SemanticColors;
 
 export const darkColors = {
@@ -162,6 +192,21 @@ export const darkColors = {
   graphics: {
     default: palette.cyan[400],
     text: palette.cyan[100],
+  },
+  border: {
+    subtle: palette.navy[700],
+    default: palette.navy[600],
+    strong: palette.navy[500],
+    focus: palette.cyan[400],
+  },
+  overlay: {
+    scrim: '#000000A3',
+  },
+  navigation: {
+    active: palette.cyan[400],
+    inactive: palette.navy[300],
+    surface: palette.navy[800],
+    rail: palette.navy[700],
   },
 } as const satisfies SemanticColors;
 

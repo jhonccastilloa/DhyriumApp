@@ -13,8 +13,7 @@ class StorageAdapter {
       const value = this.storage.getString(key);
       if (!value) return null;
       return value;
-    } catch (error) {
-      console.log(error);
+    } catch {
       return null;
     }
   }
@@ -22,17 +21,15 @@ class StorageAdapter {
   static setItem(key: string, value: string): void {
     try {
       this.storage.set(key, value);
-    } catch (error) {
-      console.log(error);
-      throw new Error(`Error setting item ${key} ${value} `);
+    } catch {
+      throw new Error(`No se pudo guardar la preferencia ${key}`);
     }
   }
 
   static removeItem(key: string): void {
     try {
       this.storage.remove(key);
-    } catch (error) {
-      console.log(error);
+    } catch {
       throw new Error(`Error removing item ${key}`);
     }
   }

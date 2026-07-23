@@ -5,7 +5,7 @@ export const ProfileSchema = z.object({
   fullName: z.string().trim().min(1),
   email: z.email(),
   dni: z.string(),
-  phone: z.string(),
+  phone: z.string().nullable(),
   roleName: z.string(),
 });
 

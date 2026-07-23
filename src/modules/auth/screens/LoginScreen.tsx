@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { AxiosError } from 'axios';
 import { toast } from 'sonner-native';
 import { useAuthStore } from '@/modules/auth/state/useAuthStore';
 import AppFlex from '@/components/layout/AppFlex';
@@ -15,13 +16,25 @@ import loginFormSchema, { type LoginFormData } from '../schemas/loginFormSchema'
 const LoginScreen = () => {
   const login = useAuthStore(s => s.login);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [authError, setAuthError] = useState<string>();
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginFormSchema),
   });
 
   const onSubmit = async (data: LoginFormData) => {
-    await login(data.dni, data.password);
-    toast.success('Login exitoso');
+    setAuthError(undefined);
+    try {
+      await login(data.dni, data.password);
+      toast.success('Sesión iniciada');
+    } catch (error) {
+      const message = (
+        error as AxiosError<{ message?: string }>
+      ).response?.data?.message;
+      setAuthError(
+        message ||
+          'No pudimos iniciar sesión. Revisa tus datos e inténtalo nuevamente.'
+      );
+    }
   };
 
   return (
@@ -64,6 +77,15 @@ const LoginScreen = () => {
           iconSize="sm"
           onPressInRight={() => setIsPasswordVisible(value => !value)}
         />
+        {authError ? (
+          <AppText
+            variant="text.sm.regular"
+            color="error"
+            accessibilityRole="alert"
+          >
+            {authError}
+          </AppText>
+        ) : null}
         <FormButton text="Ingresar" size="lg" />
       </FormContainer>
     </AuthScreenContainer>

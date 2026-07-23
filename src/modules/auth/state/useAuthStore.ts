@@ -9,6 +9,7 @@ interface AuthState {
   status: AuthStatus;
   token?: string;
   login: (username: string, password: string) => Promise<boolean>;
+  logout: () => Promise<void>;
   checkStatus: () => Promise<void>;
 }
 

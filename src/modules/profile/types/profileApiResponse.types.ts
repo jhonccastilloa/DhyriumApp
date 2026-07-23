@@ -13,7 +13,7 @@ export interface ProfileApiDetails {
   lastNameRef: string;
   addressRef: string;
   dni: string;
-  phone: string;
+  phone: string | null;
   phoneRef: string;
   updatedAt: string;
   degree: string;

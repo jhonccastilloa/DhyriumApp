@@ -1,6 +1,9 @@
 import { darkColors } from './semanticColors';
 import { palette } from './palette';
 import {
+  border,
+  control,
+  elevation,
   fontFamily,
   fontSize,
   fontWeight,
@@ -23,4 +26,7 @@ export const darkTheme = {
   icon,
   typography,
   opacity,
+  control,
+  border,
+  elevation,
 } as const;

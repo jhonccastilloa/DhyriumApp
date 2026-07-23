@@ -2,6 +2,7 @@ declare module 'react-native-config' {
   export interface NativeConfig {
     MMKV_ENCRYPTION_KEY: string;
     APP_ENV: 'DEV' | 'PROD';
+    API_BASE_URL?: string;
   }
 
   const Config: NativeConfig;

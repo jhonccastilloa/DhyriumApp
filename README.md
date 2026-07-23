@@ -1,4 +1,45 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# Dhyrium móvil
+
+Aplicación empresarial React Native para gestión documental. La primera
+versión contiene autenticación real, Inicio, Herramientas, Más, Contratos y un
+compositor reutilizable para escanear u organizar PDFs.
+
+## Variables de entorno
+
+Copiar `.env.example` a `.env` y configurar una URL alcanzable desde el
+dispositivo:
+
+```text
+APP_ENV=development
+API_BASE_URL=http://172.16.10.250:8013/api/v1
+MMKV_ENCRYPTION_KEY=<clave-local-segura>
+```
+
+`localhost` dentro de un dispositivo Android no apunta al equipo de
+desarrollo. Usar la IP LAN, `10.0.2.2` en el emulador estándar o `adb reverse`.
+
+## Dependencias nativas
+
+El flujo documental usa el escáner nativo, selector de archivos, drag and drop,
+visor de PDF, almacenamiento local y share sheet. Después de instalar:
+
+```sh
+npm install
+npx react-native-asset
+```
+
+En iOS también se requiere `bundle exec pod install` desde macOS. Los permisos
+de cámara y la tipografía Satoshi están vinculados en los proyectos nativos.
+
+## Calidad
+
+```sh
+npm run quality
+npm test -- --runInBand
+```
+
+Este proyecto fue creado con [React Native](https://reactnative.dev) y
+`@react-native-community/cli`.
 
 # Getting Started
 
