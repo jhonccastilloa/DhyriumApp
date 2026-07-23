@@ -47,11 +47,23 @@ El proyecto usa una estructura por responsabilidades y funcionalidades.
 
 ## Módulos y estado
 
-- Una feature vive en `src/modules/<feature>` y puede incluir `screens`, `navigation`, `components`, `services`, `state`, `schemas`, `types` y `constants` según lo necesite.
+- Una feature vive en `src/modules/<feature>` y puede incluir `screens`, `navigation`, `components`, `services`, `state`, `schemas`, `types`, `entities`, `mappers` y `constants` según lo necesite.
 - Ubica una store según quién posee el estado, no según desde dónde se consume.
 - Usa `app/state` para estado transversal, por ejemplo loader, tema, conectividad o idioma.
 - Usa `modules/<feature>/state` para estado de una feature, por ejemplo `modules/auth/state/useAuthStore.ts`.
 - Mantén los servicios de una feature junto a ella. Un servicio que consume API y representa el dominio de autenticación pertenece a `modules/auth/services`.
+
+## Entidades, contratos API y mappers
+
+- Modela los datos de dominio de una feature en `modules/<feature>/entities`. Una entidad representa los datos que consume la aplicación, no necesariamente toda la respuesta del backend.
+- Define cada entidad en un archivo `PascalCase.ts`, por ejemplo `entities/Profile.ts`. Exporta un schema de Zod con el patrón `NombreSchema` y su tipo inferido con el patrón `Nombre`, por ejemplo `ProfileSchema` y `Profile`.
+- Coloca los contratos externos de endpoints en `modules/<feature>/types`, con el sufijo `ApiResponse` y en archivos `camelCase.types.ts`, por ejemplo `profileApiResponse.types.ts` y `ProfileApiResponse`.
+- Tipa explícitamente la forma conocida del backend, incluidas estructuras anidadas, arreglos, opcionalidad y valores `null`. Cuando la forma de una propiedad aún sea desconocida, usa `unknown` (o `unknown[]` para listas) hasta contar con su contrato; no uses `any`.
+- Nunca incluyas credenciales, hashes de contraseña, tokens u otros datos sensibles en entidades de dominio. Si el backend los devuelve, no los mapees ni los expongas a la UI; solicita eliminarlos de la respuesta del servidor.
+- Usa `modules/<feature>/mappers` para transformar contratos externos en entidades. Nombra los mappers como `mapNombre.ts` y expórtalos como `mapNombre`.
+- Un mapper debe construir el modelo de dominio de forma explícita y validarlo mediante `NombreSchema.parse()`. Centraliza allí normalizaciones como nombres completos, valores por defecto o conversiones de formato.
+- Los servicios de una feature consumen el DTO del endpoint y retornan entidades mapeadas, no la respuesta HTTP cruda. Por ejemplo: `api.get<ProfileApiResponse>('/profile')` seguido de `mapProfile(response.data)`.
+- Configura la URL base de la API de forma centralizada en `infrastructure/http` o `config`. Los servicios deben usar rutas relativas y no sobrescribir la URL base salvo que el caso lo requiera explícitamente.
 
 ## Navegación
 
