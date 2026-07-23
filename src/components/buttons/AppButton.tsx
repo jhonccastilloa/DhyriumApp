@@ -14,7 +14,7 @@ import { IconName } from '../icons/iconRegistry';
 import { IconSizeTheme } from '@/styles/theme/tokens';
 import AppIcon from '../icons/AppIcon';
 
-export type ButtonSize = 'md' | 'sm' | 'action';
+export type ButtonSize = 'lg' | 'md' | 'sm' | 'action';
 export type ButtonVariant = 'solid' | 'outline' | 'ghost' | 'link';
 export type ButtonAlignment = 'left' | 'right' | 'center' | 'full';
 
@@ -115,6 +115,11 @@ const styles = StyleSheet.create(theme => ({
 
     variants: {
       size: {
+        lg: {
+          minHeight: 56,
+          paddingHorizontal: theme.spacing.lg,
+          borderRadius: theme.radius.sm,
+        },
         md: {
           minHeight: 52,
           paddingHorizontal: theme.spacing.lg,
@@ -186,6 +191,9 @@ const styles = StyleSheet.create(theme => ({
 
     variants: {
       size: {
+        lg: {
+          ...theme.typography.button,
+        },
         md: {
           ...theme.typography.button,
         },

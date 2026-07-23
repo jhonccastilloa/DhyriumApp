@@ -1,64 +1,72 @@
-import { useNavigation } from '@react-navigation/native';
-import { AuthNavigatorNavigationProp } from '../navigation/AuthNavigator';
-import { useAuthStore } from '@/modules/auth/state/useAuthStore';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import loginFormSchema, { LoginFormData } from '../schemas/loginFormSchema';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner-native';
-import ScreenContainer from '@/components/layout/ScreenContainer';
+import { useAuthStore } from '@/modules/auth/state/useAuthStore';
 import AppFlex from '@/components/layout/AppFlex';
-import AppIcon from '@/components/icons/AppIcon';
 import AppText from '@/components/typography/AppText';
 import FormContainer from '@/components/form/FormContainer';
 import FormTextInput from '@/components/form/inputs/FormTextInput';
 import FormButton from '@/components/form/FormButton';
-import { AppButton } from '@/components/buttons/AppButton';
+import AuthHero from '../components/AuthHero';
+import AuthScreenContainer from '../components/AuthScreenContainer';
+import loginFormSchema, { type LoginFormData } from '../schemas/loginFormSchema';
+
 const LoginScreen = () => {
   const login = useAuthStore(s => s.login);
-  const navigation = useNavigation<AuthNavigatorNavigationProp>();
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginFormSchema),
   });
 
   const onSubmit = async (data: LoginFormData) => {
-    await login(data.email, data.password);
+    await login(data.dni, data.password);
     toast.success('Login exitoso');
   };
+
   return (
-    <ScreenContainer justify="center" gap="md">
-      <AppFlex align="center" direction="column" gap="xs">
-        <AppIcon name="myLogo" size="xxxl" />
-        <AppText variant="title.xxl">DebtMate</AppText>
-        <AppText variant="text.md.bold">¡Bienvenido!</AppText>
-      </AppFlex>
+    <AuthScreenContainer
+      footer={
+        <AppFlex align="center" pb="sm">
+          <AppText variant="text.xs.regular" color="details">
+            Acceso seguro · Dhyrium SAA
+          </AppText>
+        </AppFlex>
+      }
+    >
+      <AuthHero
+        eyebrow="GESTIÓN DOCUMENTAL"
+        title="Bienvenido"
+        description="Ingresa para gestionar contratos y documentos desde cualquier lugar."
+      />
+
       <FormContainer
         form={loginForm}
         onSubmit={loginForm.handleSubmit(onSubmit)}
         schema={loginFormSchema}
+        gap="lg"
       >
         <FormTextInput
-          name="email"
-          keyboardType="email-address"
+          name="dni"
+          label="DNI"
+          size="lg"
+          keyboardType="number-pad"
+          maxLength={8}
           autoCapitalize="none"
-          label="email"
-          iconLeft="user"
         />
         <FormTextInput
           name="password"
+          label="Contraseña"
+          size="lg"
           autoCapitalize="none"
-          label="password"
-          secureTextEntry
-          iconLeft="key"
+          secureTextEntry={!isPasswordVisible}
+          iconRight={isPasswordVisible ? 'eyeSlash' : 'eye'}
+          iconSize="sm"
+          onPressInRight={() => setIsPasswordVisible(value => !value)}
         />
-        <FormButton text="Iniciar sesión" />
+        <FormButton text="Ingresar" size="lg" />
       </FormContainer>
-      <AppButton
-        text="No tengo cuenta"
-        variant="link"
-        align="center"
-        onPress={() => navigation.navigate('Register')}
-      />
-    </ScreenContainer>
+    </AuthScreenContainer>
   );
 };
 

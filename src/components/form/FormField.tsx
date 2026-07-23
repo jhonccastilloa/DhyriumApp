@@ -1,11 +1,10 @@
-import { View } from 'react-native';
 import React, { ComponentType } from 'react';
 import { Controller } from 'react-hook-form';
 import FormLabel from './FormLabel';
 import FormErrorText from './FormErrorText';
-import { _ZodType } from 'zod';
 import { useFormContainerContext } from './useFormContainerContext';
 import { FormInputBase } from './form.types';
+import AppFlex from '../layout/AppFlex';
 
 interface FormFieldProps<InputProps extends object>
   extends FormInputBase {
@@ -21,21 +20,10 @@ const FormField = <InputProps extends object>({
   InputComponentProps,
   flex = 0,
 }: FormFieldProps<InputProps>) => {
-  const { control, schema } = useFormContainerContext();
-
-  const isRequired = (fieldName: string) => {
-    if (!schema) return false;
-    const field = schema[fieldName] as _ZodType | undefined;
-    if (!field) return false;
-    return !field.isOptional() && !field.isNullable?.();
-  };
-  const required = isRequired(name);
-  console.log('asd', required);
+  const { control } = useFormContainerContext();
   return (
-    <View style={{ flex }}>
-      <FormLabel
-        label={label ? `${required ? '*' : ''} ${label}` : undefined}
-      />
+    <AppFlex flex={flex} gap="sm">
+      <FormLabel label={label} />
       {control ? (
         <Controller
           name={name}
@@ -58,7 +46,7 @@ const FormField = <InputProps extends object>({
       ) : (
         <InputComponent {...InputComponentProps} />
       )}
-    </View>
+    </AppFlex>
   );
 };
 

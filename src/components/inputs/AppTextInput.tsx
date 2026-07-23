@@ -26,6 +26,7 @@ export interface AppTextInputProps extends TextInputProps {
   iconColor?: IconColorTheme;
   onPressInRight?: () => void;
   iconContainerStyle?: StyleProp<ViewStyle>;
+  size?: 'md' | 'lg';
 }
 
 const AppTextInput = ({
@@ -41,12 +42,14 @@ const AppTextInput = ({
   noBorder,
   shadow,
   iconContainerStyle,
+  size = 'md',
   placeholder,
   ...props
 }: AppTextInputProps) => {
   styles.useVariants({
     noBorder,
     shadow,
+    size,
   });
 
   const onChange = (text: string) => {
@@ -97,6 +100,13 @@ const styles = StyleSheet.create(theme => ({
     borderColor: theme.colors.button.border,
 
     variants: {
+      size: {
+        md: {},
+        lg: {
+          minHeight: 56,
+          borderRadius: theme.radius.sm,
+        },
+      },
       noBorder: {
         true: {
           borderTopWidth: 0,

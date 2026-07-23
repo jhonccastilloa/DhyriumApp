@@ -85,6 +85,7 @@ const styles = StyleSheet.create(theme => ({
 
         ['button']: theme.typography.button,
         ['actionButton']: theme.typography.actionButton,
+        ['overline']: theme.typography.overline,
         ['menu']: theme.typography.menu,
       },
       size: {

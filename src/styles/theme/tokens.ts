@@ -143,6 +143,12 @@ export const typography = {
     lineHeight: 18,
     letterSpacing: -0.42,
   },
+  overline: {
+    fontFamily: fontFamily.satoshiBold,
+    fontSize: 12,
+    lineHeight: 16,
+    letterSpacing: 0.8,
+  },
   menu: {
     fontFamily: fontFamily.satoshiMedium,
     fontSize: 10,

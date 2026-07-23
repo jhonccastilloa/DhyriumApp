@@ -12,6 +12,13 @@ type SemanticColors = {
       background1: string;
       background2: string;
     };
+    status: {
+      success: string;
+      warning: string;
+      info: string;
+      error: string;
+      review: string;
+    };
   };
   text: {
     headings: string;
@@ -51,96 +58,110 @@ type SemanticColors = {
 export const lightColors = {
   surface: {
     background: {
-      primary: palette.blue[100],
+      primary: palette.navy[50],
       cards: palette.pure.white,
-      elements: palette.blue[200],
-      submenu: 'rgba(230, 234, 239, 0.5)',
+      elements: palette.navy[100],
+      submenu: palette.cyan[50],
     },
     gradient: {
       background1: palette.pure.white,
-      background2: palette.blue[200],
+      background2: palette.cyan[100],
+    },
+    status: {
+      success: palette.green[50],
+      warning: palette.amber[50],
+      info: palette.info[50],
+      error: palette.red[50],
+      review: palette.navy[50],
     },
   },
   text: {
-    headings: palette.blue[900],
-    body: palette.blue[500],
-    details: palette.blue[400],
+    headings: palette.brand.secondary,
+    body: palette.navy[500],
+    details: palette.navy[400],
     button: palette.pure.white,
-    link: palette.green[700],
-    disabled: palette.blue[400],
-    success: palette.pure.white,
-    error: palette.pure.white,
-    warning: palette.pure.white,
+    link: palette.cyan[700],
+    disabled: palette.navy[400],
+    success: palette.green[700],
+    error: palette.red[500],
+    warning: palette.amber[600],
   },
   icon: {
-    primary: palette.blue[800],
-    secondary: palette.blue[500],
+    primary: palette.brand.secondary,
+    secondary: palette.navy[500],
     button: palette.pure.white,
-    disabled: palette.blue[400],
+    disabled: palette.navy[400],
   },
   button: {
     fill: {
-      primary: palette.brand.blue,
-      secondary: palette.blue[200],
-      disabled: palette.blue[200],
-      base: palette.blue[300],
+      primary: palette.brand.primary,
+      secondary: palette.navy[100],
+      disabled: palette.navy[100],
+      base: palette.cyan[600],
     },
     action: {
       surface: palette.pure.white,
     },
-    border: palette.blue[300],
+    border: palette.neutral[100],
   },
   graphics: {
-    default: palette.green[600],
-    text: palette.green[700],
+    default: palette.brand.primary,
+    text: palette.cyan[700],
   },
 } as const satisfies SemanticColors;
 
 export const darkColors = {
   surface: {
     background: {
-      primary: palette.blue[900],
-      cards: palette.blue[800],
-      elements: palette.blue[600],
-      submenu: 'rgba(19, 30, 41, 0.5)',
+      primary: palette.navy[900],
+      cards: palette.navy[800],
+      elements: palette.navy[700],
+      submenu: palette.navy[700],
     },
     gradient: {
-      background1: palette.blue[600],
-      background2: palette.blue[700],
+      background1: palette.navy[800],
+      background2: palette.navy[900],
+    },
+    status: {
+      success: palette.green.alpha[16],
+      warning: palette.amber.alpha[18],
+      info: palette.info.alpha[16],
+      error: palette.red.alpha[16],
+      review: palette.navy.alpha[16],
     },
   },
   text: {
-    headings: palette.pure.white,
-    body: palette.blue[300],
-    details: palette.blue[400],
-    button: palette.blue[900],
-    link: palette.brand.green,
-    disabled: palette.blue[500],
-    success: palette.pure.white,
-    error: palette.pure.white,
-    warning: palette.pure.white,
+    headings: palette.navy[50],
+    body: palette.cyan[100],
+    details: palette.navy[300],
+    button: palette.navy[900],
+    link: palette.cyan[400],
+    disabled: palette.navy[400],
+    success: palette.green[400],
+    error: palette.red[400],
+    warning: palette.amber[400],
   },
   icon: {
-    primary: palette.pure.white,
-    secondary: palette.blue[300],
-    button: palette.blue[900],
-    disabled: palette.blue[400],
+    primary: palette.navy[50],
+    secondary: palette.cyan[100],
+    button: palette.navy[900],
+    disabled: palette.navy[400],
   },
   button: {
     fill: {
-      primary: palette.brand.green,
-      secondary: palette.blue[600],
-      disabled: palette.blue[800],
-      base: palette.blue[600],
+      primary: palette.cyan[400],
+      secondary: palette.navy[700],
+      disabled: palette.navy[700],
+      base: palette.navy[600],
     },
     action: {
-      surface: palette.blue[600],
+      surface: palette.navy[600],
     },
-    border: palette.blue[500],
+    border: palette.cyan.alpha[24],
   },
   graphics: {
-    default: palette.green[600],
-    text: palette.brand.green,
+    default: palette.cyan[400],
+    text: palette.cyan[100],
   },
 } as const satisfies SemanticColors;
 
