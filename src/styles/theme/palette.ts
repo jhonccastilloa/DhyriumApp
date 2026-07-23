@@ -1,0 +1,40 @@
+export const palette = {
+  brand: {
+    blue: '#131E29',
+    green: '#48D497',
+  },
+  aux: {
+    yellow: '#FAC150',
+    orange: '#FB6D47',
+    fuchsia: '#FB5ED1',
+    lila: '#D9B5FF',
+    turquoise: '#2495C1',
+    darkBlue: '#2D2D5F',
+  },
+  green: {
+    100: '#F1FCF6',
+    200: '#DAF6EA',
+    300: '#B4EFCF',
+    400: '#8AE7B8',
+    500: '#48D497',
+    600: '#00C57B',
+    700: '#048B53',
+    800: '#005231',
+    900: '#004126',
+  },
+  blue: {
+    100: '#F6F7F9',
+    200: '#E6EAEF',
+    300: '#A1B6CC',
+    400: '#6F7E92',
+    500: '#36495C',
+    600: '#203244',
+    700: '#131E29',
+    800: '#101922',
+    900: '#050E19',
+  },
+  pure: {
+    white: '#FFFFFF',
+    black: '#000000',
+  },
+} as const;
