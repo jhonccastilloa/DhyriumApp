@@ -1,95 +1,131 @@
 # Guía de arquitectura y convenciones
 
-## Arquitectura
+## Contexto del proyecto
 
-El proyecto usa una estructura por responsabilidades y funcionalidades.
+Dhyrium es una aplicación móvil React Native CLI, escrita en TypeScript. La base actual usa React Native 0.86, React 19, React Navigation 7, Zustand, TanStack Query, Axios, MMKV, React Hook Form, Zod y React Native Unistyles.
 
-- `src/app`: composición global de la aplicación. Contiene `App`, navegación raíz, providers y estado transversal.
-- `src/components`: UI verdaderamente reutilizable y sin conocimiento de un dominio de negocio.
-- `src/modules`: funcionalidades de negocio independientes, organizadas por feature, por ejemplo `auth`, `home`, `contacts` o `debts`.
-- `src/infrastructure`: adaptadores a servicios externos, como HTTP y almacenamiento local.
-- `src/config`: configuración de la aplicación y variables de entorno.
-- `src/styles`: tema, tokens y configuración visual global.
-- `src/utils`: funciones reutilizables que no pertenecen a un dominio concreto.
-- `src/types`: declaraciones globales o tipos transversales que no pertenecen a una feature o componente.
-- `src/assets`: recursos estáticos, como iconos, imágenes y fuentes.
+- El punto de entrada es `index.js`. Debe cargar `src/styles/unistyles` antes de registrar `src/app/App`.
+- La composición global vive en `src/app`. `App.tsx` instala, de fuera hacia dentro, Gesture Handler, React Query, Bottom Sheets, Keyboard Controller, Safe Area, navegación y `Toaster`. Conserva ese orden salvo que se entienda y pruebe la dependencia entre providers.
+- El alias `@/` apunta a `src/` y está configurado tanto en TypeScript como en Babel. No agregues alias solo en una de las dos configuraciones.
+- La app se distribuye en Android e iOS. Los cambios en `android/`, `ios/`, `app.json`, Metro, Babel, fuentes o dependencias nativas requieren validación en la plataforma afectada.
 
-### Reglas de dependencia
+## Arquitectura y dirección de dependencias
+
+El código se organiza por composición global, UI compartida y funcionalidades de negocio:
+
+- `src/app`: `App`, providers, navegación raíz y estado realmente transversal.
+- `src/components`: primitivas visuales y de formularios reutilizables, sin conocimiento de una entidad o feature.
+- `src/modules/<feature>`: funcionalidad de negocio autocontenida. Las features actuales son `auth`, `home` y `profile`.
+- `src/infrastructure`: adaptadores de HTTP, almacenamiento u otros servicios externos.
+- `src/config`: lectura y validación de configuración de entorno.
+- `src/styles`: configuración de Unistyles, tokens, paleta, colores semánticos y temas.
+- `src/utils`: utilidades puras sin dominio.
+- `src/types`: declaraciones globales, por ejemplo módulos de SVG o de variables nativas.
+- `src/assets`: recursos estáticos.
+
+Respeta esta dirección de dependencias:
 
 - `app` puede componer módulos, componentes e infraestructura.
-- Un módulo puede usar `components`, `infrastructure`, `styles`, `utils` y sus propios archivos.
-- Un componente compartido no debe depender de una feature de negocio. Si necesita conocer contactos, deudas u otra entidad, debe vivir en el módulo correspondiente.
-- `infrastructure` no debe importar pantallas ni componentes. Mantén la lógica de red y almacenamiento independiente de la UI siempre que sea posible.
-- Evita dependencias circulares. Si dos features comparten una pieza, extráela a `components`, `utils`, `types` o `infrastructure`, según corresponda.
+- Un módulo puede usar componentes, infraestructura, estilos, utilidades y sus propios archivos.
+- Un componente compartido no puede importar una feature. Si conoce una entidad de negocio, debe vivir dentro de su módulo.
+- Infraestructura no puede depender de pantallas o componentes. Mantén los efectos de UI y la lógica de transporte separados.
+- Evita dependencias entre features. Extrae lo compartido al área que le corresponda.
 
-## Nombres de carpetas y archivos
+`apiClient` es una excepción heredada: actualmente coordina loader, token y toast. No añadas más dependencias de UI o de features a ese cliente. Si se modifica de forma relevante, aprovecha para desacoplar esas responsabilidades mediante adaptadores o una capa de aplicación.
 
-- Usa `kebab-case` para carpetas.
-- Usa `PascalCase.tsx` para componentes React, pantallas, providers y navegadores.
-- Usa `camelCase.ts` para lógica funcional, schemas, constantes, configuración y utilidades.
-- Usa `camelCase.types.ts` para tipos y `kebab-case.d.ts` para declaraciones de módulos.
-- Usa `PascalCase.ts` para archivos que exportan una clase con el mismo nombre, por ejemplo `AuthService.ts`.
-- Los hooks usan el prefijo `use`, por ejemplo `useAuthStore` o `useFormContainerContext`.
-- Las stores de Zustand usan el patrón `useNombreStore`.
-- Usa `UPPER_SNAKE_CASE` para valores constantes inmutables, por ejemplo `AUTH_STORAGE_KEYS`.
-- Conserva los nombres estándar exigidos por herramientas, como `__tests__`, `README.md`, `AGENTS.md`, `package.json`, `tsconfig.json`, `babel.config.js`, `metro.config.js`, `jest.config.js`, `app.json` e `index.js`.
+## Estructura de una feature
 
-## Componentes compartidos
+Una feature vive en `src/modules/<feature>` y solo crea las carpetas que necesita:
 
-- Usa el prefijo `App` para abstracciones visuales propias sobre React Native o librerías externas: `AppText`, `AppIcon`, `AppButton`, `AppTextInput`, `AppBottomSheetModal` y `AppSelectionSheet`.
-- Usa `App[Especialidad]Input` para controles visuales derivados de `AppTextInput`, por ejemplo `AppAmountInput`, `AppDateInput` y `AppPercentageInput`.
-- Usa el prefijo `Form` para componentes conectados a `react-hook-form`, por ejemplo `FormField`, `FormTextInput`, `FormButton` y `FormAmountInput`.
-- Conserva el sufijo `Container` para componentes estructurales que envuelven layout o contexto, por ejemplo `ScreenContainer` y `FormContainer`.
-- Los componentes específicos de dominio no usan `App`; nómbralos por entidad y representación, por ejemplo `DebtStatusBadge`.
-- El nombre del archivo, componente exportado y tipo de props deben coincidir: `AppButton.tsx`, `AppButton`, `AppButtonProps`.
-- Coloca los componentes según su responsabilidad: layout en `components/layout`, formularios en `components/form`, tipografía en `components/typography`, feedback en `components/feedback` e iconos en `components/icons`.
-- No agregues lógica de negocio a componentes compartidos. Recibe datos y callbacks por props; deja las peticiones y reglas de dominio en módulos o servicios.
+```text
+src/modules/<feature>/
+  components/     # UI propia de la feature
+  screens/        # pantallas
+  navigation/     # navegadores y ParamLists de la feature
+  services/       # operaciones contra API u otros adaptadores
+  state/          # Zustand u otro estado propiedad de la feature
+  schemas/        # validación de formularios o inputs
+  entities/       # modelo de dominio validado con Zod
+  types/          # DTOs/contratos externos
+  mappers/        # conversión de DTO a entidad
+  constants/      # constantes de la feature
+```
 
-## Módulos y estado
+- Las pantallas orquestan hooks, navegación y componentes; no deben contener llamadas HTTP ni transformaciones extensas de DTOs.
+- Los componentes de `modules/<feature>/components` pueden conocer el dominio de esa feature, pero deben recibir sus datos y callbacks por props cuando sea posible.
+- Ubica una store según quién posee el estado, no según desde dónde se consume. Usa `app/state` solo para estado transversal.
+- TanStack Query es la fuente de verdad para datos remotos cacheables. Usa Zustand para estado de sesión, UI o estado local compartido; no dupliques resultados de queries en una store sin una razón explícita.
+- Las mutaciones y consultas nuevas deben vivir en la feature propietaria y usar claves de query estables, definidas cerca del servicio o hook que las consume.
 
-- Una feature vive en `src/modules/<feature>` y puede incluir `screens`, `navigation`, `components`, `services`, `state`, `schemas`, `types`, `entities`, `mappers` y `constants` según lo necesite.
-- Ubica una store según quién posee el estado, no según desde dónde se consume.
-- Usa `app/state` para estado transversal, por ejemplo loader, tema, conectividad o idioma.
-- Usa `modules/<feature>/state` para estado de una feature, por ejemplo `modules/auth/state/useAuthStore.ts`.
-- Mantén los servicios de una feature junto a ella. Un servicio que consume API y representa el dominio de autenticación pertenece a `modules/auth/services`.
+## Datos, API y almacenamiento
 
-## Entidades, contratos API y mappers
+El flujo esperado para datos de backend es:
 
-- Modela los datos de dominio de una feature en `modules/<feature>/entities`. Una entidad representa los datos que consume la aplicación, no necesariamente toda la respuesta del backend.
-- Define cada entidad en un archivo `PascalCase.ts`, por ejemplo `entities/Profile.ts`. Exporta un schema de Zod con el patrón `NombreSchema` y su tipo inferido con el patrón `Nombre`, por ejemplo `ProfileSchema` y `Profile`.
-- Coloca los contratos externos de endpoints en `modules/<feature>/types`, con el sufijo `ApiResponse` y en archivos `camelCase.types.ts`, por ejemplo `profileApiResponse.types.ts` y `ProfileApiResponse`.
-- Tipa explícitamente la forma conocida del backend, incluidas estructuras anidadas, arreglos, opcionalidad y valores `null`. Cuando la forma de una propiedad aún sea desconocida, usa `unknown` (o `unknown[]` para listas) hasta contar con su contrato; no uses `any`.
-- Nunca incluyas credenciales, hashes de contraseña, tokens u otros datos sensibles en entidades de dominio. Si el backend los devuelve, no los mapees ni los expongas a la UI; solicita eliminarlos de la respuesta del servidor.
-- Usa `modules/<feature>/mappers` para transformar contratos externos en entidades. Nombra los mappers como `mapNombre.ts` y expórtalos como `mapNombre`.
-- Un mapper debe construir el modelo de dominio de forma explícita y validarlo mediante `NombreSchema.parse()`. Centraliza allí normalizaciones como nombres completos, valores por defecto o conversiones de formato.
-- Los servicios de una feature consumen el DTO del endpoint y retornan entidades mapeadas, no la respuesta HTTP cruda. Por ejemplo: `api.get<ProfileApiResponse>('/profile')` seguido de `mapProfile(response.data)`.
-- Configura la URL base de la API de forma centralizada en `infrastructure/http` o `config`. Los servicios deben usar rutas relativas y no sobrescribir la URL base salvo que el caso lo requiera explícitamente.
+```text
+API DTO (types) -> service -> mapper -> entidad de dominio (entities) -> UI/state
+```
+
+- Los contratos de endpoint van en `modules/<feature>/types` como `camelCase.types.ts` y usan el sufijo `ApiResponse`. Tipar por completo lo conocido, incluidos `null`, arrays y objetos anidados. Usa `unknown`, nunca `any`, cuando falte un contrato.
+- Cada entidad de dominio va en `entities/PascalCase.ts`, exporta `NombreSchema` y el tipo inferido `Nombre`.
+- Los mappers se nombran `mapNombre.ts`, construyen el modelo explícitamente y lo validan con `NombreSchema.parse()`.
+- Los servicios usan rutas relativas contra el `apiClient`, tipan la respuesta de Axios y retornan entidades mapeadas; no retornan `AxiosResponse` ni DTOs a pantallas.
+- La base URL permanece centralizada en `src/infrastructure/http/apiClient.ts`; no la repitas en servicios ni componentes. Si se vuelve configurable, hazlo a través de `src/config/env.ts`.
+- Una respuesta de autenticación puede contener token como dato de frontera, pero nunca debe exponer contraseña, hashes, tokens o credenciales a entidades, componentes, logs o mensajes de error. Reduce el DTO al contrato mínimo que la app necesita antes de persistirlo.
+- `StorageAdapter` es el único punto de acceso a MMKV. Las claves de una feature se declaran en su carpeta `constants` y se guardan como constantes inmutables.
+- Nunca imprimas secretos, tokens, DNI, contraseñas ni respuestas HTTP completas en consola.
+
+## Configuración y secretos
+
+- `.env` es local y está ignorado por Git. No lo agregues al repositorio ni lo incluyas en pruebas o capturas.
+- `src/config/env.ts` valida las variables al iniciar. Mantén allí la lista central de variables requeridas; actualmente incluye `MMKV_ENCRYPTION_KEY` y `APP_ENV` (`DEV` o `PROD`).
+- No uses valores secretos por defecto. Para documentar configuración, crea o actualiza un archivo de ejemplo sin valores reales, como `.env.example`.
+
+## UI, tema y accesibilidad
+
+- Usa Unistyles y los tokens de `src/styles/theme`. Prefiere colores semánticos (`theme.colors.*`), espaciado (`theme.spacing.*`), tipografía y radios del tema antes que valores literales.
+- `AppText`, `AppFlex`, `AppButton`, `AppTextInput`, `AppIcon`, bottom sheets y `ScreenContainer` son las abstracciones compartidas preferidas. Extiéndelas antes de duplicar estilos o comportamiento de React Native.
+- Usa el prefijo `App` para componentes visuales compartidos y `App[Especialidad]Input` para controles derivados de `AppTextInput`.
+- Usa el prefijo `Form` únicamente para controles conectados a React Hook Form. Los `Form*Input` delegan en `FormField`; no dupliques la integración con `Controller` en cada pantalla.
+- Los componentes estructurales terminan en `Container`. Los componentes de dominio se nombran por entidad y representación, sin prefijo `App`.
+- El nombre de archivo, componente exportado y props deben coincidir: `AppButton.tsx`, `AppButton`, `AppButtonProps`.
+- Para estilos estáticos usa `StyleSheet.create` de `react-native-unistyles`. Para valores dinámicos de tokens usa `useUnistyles`. No crees un segundo sistema de tema.
+- Todo control presionable debe comunicar estado deshabilitado y un rol accesible cuando no lo proporcione la plataforma. Conserva los patrones de `AppButton` y `AppOptionItem`.
+- Si una pantalla contiene inputs, considera `KeyboardAwareScrollView` y `keyboardShouldPersistTaps="handled"`, como en el flujo de autenticación.
+
+## Formularios y validación
+
+- Define el schema Zod de cada formulario en `modules/<feature>/schemas` y deriva el tipo con `z.infer`.
+- Usa `useForm` con `zodResolver` en la pantalla o hook de la feature, y entrega el resultado a `FormContainer`.
+- La validación de formato pertenece al schema; los componentes de input solo se ocupan de presentación y restricciones de entrada reutilizables.
+- Muestra errores mediante los componentes `Form*`; no implementes una variante visual de error por cada formulario.
+- Las operaciones asíncronas de envío deben reflejar carga, impedir doble envío y manejar el error sin ocultar información sensible.
 
 ## Navegación
 
-- Usa el sufijo `Navigator` para navegadores, por ejemplo `RootNavigator`, `MainAppNavigator` y `AuthNavigator`.
-- Usa el patrón `NombreNavigatorParamList` para tipos de rutas, por ejemplo `MainTabsNavigatorParamList`.
-- Usa el patrón `NombreNavigatorNavigationProp` para tipos de navegación específicos cuando sean necesarios.
-- Nombra las rutas por su destino, por ejemplo `Home`, `Settings`, `Auth` y `MainTabs`; evita sufijos estructurales como `Tab` o `Screen`.
-- Mantén sincronizados el `ParamList`, cada `Screen` configurado y cada llamada a `navigate`.
-- Usa `NavigatorScreenParams` al declarar una ruta que contiene otro navegador.
-- `SignIn` y `SignOut` son rutas raíz existentes y se conservan como excepción de compatibilidad; no las renombres dentro de un refactor sin una decisión explícita.
-- Evita anotar `useNavigation` manualmente salvo que necesites una API específica del navegador; prefiere los tipos inferidos por el navegador raíz cuando sea posible.
+- Los navegadores usan el sufijo `Navigator` y exportan `NombreNavigatorParamList`. Declara también `NombreNavigatorNavigationProp` solo si un consumidor requiere esa API concreta.
+- La navegación raíz usa la API estática de React Navigation: `RootNavigator` exporta un `StaticParamList` y extiende `ReactNavigation.RootParamList`. Mantén ese patrón.
+- `SignIn` y `SignOut` son nombres de rutas raíz de compatibilidad. Aunque su asociación con el estado parezca invertida, no los renombres ni alteres su mapeo sin una decisión de producto y una migración explícita.
+- Para una ruta que contiene otro navegador usa `NavigatorScreenParams` y mantén sincronizados el ParamList, el `Screen` y cada `navigate`.
+- Los navegadores propios de una feature deben residir en `modules/<feature>/navigation`; los navegadores que componen features pertenecen a `app/navigation`.
+- No escribas tipos manuales para `useNavigation` salvo que necesites una API del navegador específica. Prefiere la inferencia del ParamList raíz.
 
-## Imports y tipos
+## Nombres, imports y TypeScript
 
-- Usa el alias `@/` para imports entre áreas distintas de `src`.
-- Usa imports relativos para archivos cercanos dentro de la misma carpeta o feature.
-- Usa `import type` cuando la importación solo se utilice como tipo.
-- Mantén los tipos de una feature dentro de `modules/<feature>/types`; coloca en `src/types` solo declaraciones o tipos realmente globales.
-- Tras mover un archivo, actualiza imports, exports, aliases, tipos, pruebas y rutas afectadas.
+- Carpetas: `kebab-case` (las carpetas de inputs existentes son una excepción histórica; no propagues el patrón).
+- Componentes, pantallas, providers y navegadores: `PascalCase.tsx`.
+- Clases: `PascalCase.ts` y exportan una clase del mismo nombre.
+- Funciones, hooks, schemas, constantes y utilidades: `camelCase.ts`; tipos de feature: `camelCase.types.ts`; declaraciones: `kebab-case.d.ts`.
+- Hooks comienzan por `use`; stores Zustand siguen `useNombreStore`; constantes inmutables usan `UPPER_SNAKE_CASE`.
+- Usa `@/` entre áreas distintas de `src` y rutas relativas para archivos próximos de la misma carpeta o feature.
+- Usa `import type` cuando una importación solo se use como tipo. Mantén tipos de dominio en su feature y reserva `src/types` para lo global.
+- Evita `any`, conversiones inseguras y supresiones de TypeScript. Si un dato externo no está definido, represéntalo como `unknown` y valídalo en el límite.
 
-## Cambios, pruebas y commits
+## Calidad, pruebas y cambios
 
-- No mezcles cambios de comportamiento con un refactor de nombres.
-- Ejecuta `npm run lint` después de modificar TypeScript o componentes y corrige los errores introducidos por el cambio.
-- Ejecuta `npx tsc --noEmit` al modificar contratos, imports, navegación, tipos o estructura de carpetas.
-- Ejecuta las pruebas disponibles cuando modifiques comportamiento. Añade pruebas junto a la funcionalidad o en `__tests__` cuando corresponda.
-- Verifica manualmente Android o iOS cuando cambies fuentes, assets, configuración nativa o dependencias de React Native.
-- Mantén los commits enfocados y funcionales. Usa prefijos Conventional Commits: `feat`, `fix`, `refactor`, `docs`, `test` y `chore`.
-- Actualiza este documento cuando adoptes una convención que deba mantenerse en cambios futuros.
+- Antes de modificar, revisa el estado de Git y conserva cambios ajenos. No combines cambios de comportamiento con un refactor de nombres no relacionado.
+- Tras cambiar TypeScript, componentes, estilos o imports ejecuta `npm run quality` (lint y typecheck) y corrige los problemas introducidos.
+- Tras cambiar comportamiento, ejecuta `npm test`. Añade o actualiza pruebas cerca de la feature o en `__tests__` para flujos transversales.
+- Prueba manualmente en Android o iOS cuando cambies navegación, teclado, bottom sheets, fuentes, assets, configuración nativa o dependencias de React Native.
+- Para dependencias nativas, actualiza los artefactos requeridos por cada plataforma (incluido `bundle exec pod install` en iOS cuando corresponda) y no edites archivos generados sin necesidad.
+- Mantén los commits enfocados y usa Conventional Commits: `feat`, `fix`, `refactor`, `docs`, `test` o `chore`.
+- Actualiza este documento cuando cambie una convención sostenida por el proyecto, el stack o el flujo de verificación.
