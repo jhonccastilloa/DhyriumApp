@@ -1,4 +1,4 @@
-export interface LoginResponse {
+export interface LoginApiResponse {
   id: number;
   role: {
     id: number;
