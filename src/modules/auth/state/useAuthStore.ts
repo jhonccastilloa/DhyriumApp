@@ -8,7 +8,7 @@ import { create } from 'zustand';
 interface AuthState {
   status: AuthStatus;
   token?: string;
-  login: (username: string, password: string) => Promise<boolean>;
+  login: (dni: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   checkStatus: () => Promise<void>;
 }
@@ -16,8 +16,8 @@ interface AuthState {
 export const useAuthStore = create<AuthState>()((set, _get) => ({
   status: AuthStatus.unauthenticated,
 
-  login: async (username: string, password: string) => {
-    const data = await AuthService.login(username, password);
+  login: async (dni: string, password: string) => {
+    const data = await AuthService.login(dni, password);
 
     set({
       status: AuthStatus.authenticated,
