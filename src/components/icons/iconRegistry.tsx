@@ -34,8 +34,11 @@ import {
   SunIcon,
   MoonIcon,
   DesktopIcon,
+  EyeIcon,
+  EyeSlashIcon,
 } from 'phosphor-react-native';
 import Sol from '@/assets/icons/Sol.svg';
+import Logo from '@/assets/icons/Logo.svg';
 
 interface IconProps {
   size: number;
@@ -56,6 +59,8 @@ const iconRegistry = {
 
   signOut: (props: IconProps) => <SignOutIcon {...props} />,
   key: (props: IconProps) => <KeyIcon {...props} />,
+  eye: (props: IconProps) => <EyeIcon {...props} />,
+  eyeSlash: (props: IconProps) => <EyeSlashIcon {...props} />,
   sun: (props: IconProps) => <SunIcon {...props} />,
   moon: (props: IconProps) => <MoonIcon {...props} />,
   desktop: (props: IconProps) => <DesktopIcon {...props} />,
@@ -147,7 +152,7 @@ const iconRegistry = {
   ),
 
   myLogo: (props: IconProps) => (
-    <WarningIcon color={props.color} size={props.size} weight="fill" />
+    <Logo fill={props.color} width={props.size} height={props.size} />
   ),
 } as const;
 
