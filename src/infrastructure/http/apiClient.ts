@@ -4,7 +4,7 @@ import StorageAdapter from '@/infrastructure/storage/StorageAdapter';
 import { AUTH_STORAGE_KEYS } from '@/modules/auth/constants/authStorageKeys';
 import { toast } from 'sonner-native';
 
-export const API_BASE_URL = 'http://localhost:3000';
+export const API_BASE_URL = 'https://dhyrium.online/back/api/v1';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
