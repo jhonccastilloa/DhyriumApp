@@ -1,6 +1,9 @@
 import { lightColors } from './semanticColors';
 import { palette } from './palette';
 import {
+  border,
+  control,
+  elevation,
   fontFamily,
   fontSize,
   fontWeight,
@@ -23,4 +26,7 @@ export const lightTheme = {
   typography,
   icon,
   opacity,
+  control,
+  border,
+  elevation,
 } as const;

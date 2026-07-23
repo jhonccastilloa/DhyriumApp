@@ -3,8 +3,9 @@ import axios, { AxiosError } from 'axios';
 import StorageAdapter from '@/infrastructure/storage/StorageAdapter';
 import { AUTH_STORAGE_KEYS } from '@/modules/auth/constants/authStorageKeys';
 import { toast } from 'sonner-native';
+import { env } from '@/config/env';
 
-export const API_BASE_URL = 'https://dhyrium.online/back/api/v1';
+export const API_BASE_URL = env.API_BASE_URL;
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -58,10 +59,15 @@ api.interceptors.response.use(
   async (err: AxiosError) => {
     const { response, config } = err;
     hideLoader(Boolean(config?.headers?.noLoader));
-    toast.error(
-      (response?.data as { message?: string } | undefined)?.message ||
-        'An error occurred. Please try again later.',
-    );
+    const isCanceled = err.code === AxiosError.ERR_CANCELED;
+    const suppressToast = Boolean(config?.headers?.suppressErrorToast);
+
+    if (!isCanceled && !suppressToast) {
+      toast.error(
+        (response?.data as { message?: string } | undefined)?.message ||
+          'No pudimos completar la operación. Intenta nuevamente.',
+      );
+    }
 
     return Promise.reject(err);
   },

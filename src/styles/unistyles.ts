@@ -1,6 +1,11 @@
 import { StyleSheet } from 'react-native-unistyles';
 
-import { darkTheme, lightTheme } from './theme';
+import { darkTheme } from './theme/dark';
+import { lightTheme } from './theme/light';
+import {
+  getStoredThemePreference,
+  resolveThemePreference,
+} from './themePreference';
 
 export const appThemes = {
   light: lightTheme,
@@ -16,7 +21,6 @@ declare module 'react-native-unistyles' {
 StyleSheet.configure({
   themes: appThemes,
   settings: {
-    initialTheme: 'light',
-    // adaptiveThemes: true,
+    initialTheme: resolveThemePreference(getStoredThemePreference()),
   },
 });

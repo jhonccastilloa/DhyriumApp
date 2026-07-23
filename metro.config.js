@@ -15,6 +15,8 @@ const config = {
   },
   resolver: {
     assetExts: assetExts.filter(ext => ext !== 'svg'),
+    blockList:
+      /node_modules(?:\\|\/).*(?:\\|\/)android(?:\\|\/)(?:\.cxx|build)(?:\\|\/).*/,
     sourceExts: [...sourceExts, 'svg'],
   },
 };

@@ -25,11 +25,43 @@ export const icon = {
 
 export const radius = {
   none: 0,
-  xs: 5,
-  sm: 16,
-  md: 40,
-  lg: 56,
+  xs: 6,
+  sm: 10,
+  md: 14,
+  lg: 18,
+  xl: 24,
   pill: 999,
+} as const;
+
+export const control = {
+  height: {
+    compact: 40,
+    default: 48,
+    large: 56,
+  },
+  hitSlop: 44,
+} as const;
+
+export const border = {
+  hairline: 1,
+  emphasized: 2,
+} as const;
+
+export const elevation = {
+  card: {
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  sheet: {
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: -6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 18,
+    elevation: 12,
+  },
 } as const;
 
 export const fontSize = {
@@ -151,9 +183,13 @@ export const typography = {
   },
   menu: {
     fontFamily: fontFamily.satoshiMedium,
-    fontSize: 10,
-    lineHeight: 13,
+    fontSize: 11,
+    lineHeight: 14,
     letterSpacing: 0,
+  },
+  numeric: {
+    fontFamily: fontFamily.satoshiMedium,
+    fontVariant: ['tabular-nums'] as const,
   },
 } as const;
 
