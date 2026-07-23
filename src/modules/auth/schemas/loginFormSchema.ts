@@ -1,10 +1,9 @@
 import { z } from 'zod';
 const loginFormSchema = z.object({
-  email: z
-    .email('Ingresa un correo electrónico válido')
+  dni: z
+    .string()
     .trim()
-    .min(1, 'El correo electrónico es obligatorio')
-    .toLowerCase(),
+    .regex(/^\d{8}$/, 'Ingresa un DNI válido de 8 dígitos'),
 
   password: z.string().min(1, 'La contraseña es obligatoria'),
 });

@@ -8,15 +8,15 @@ import { create } from 'zustand';
 interface AuthState {
   status: AuthStatus;
   token?: string;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (username: string, password: string) => Promise<boolean>;
   checkStatus: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()((set, _get) => ({
   status: AuthStatus.unauthenticated,
 
-  login: async (email: string, password: string) => {
-    const data = await AuthService.login(email, password);
+  login: async (username: string, password: string) => {
+    const data = await AuthService.login(username, password);
 
     set({
       status: AuthStatus.authenticated,
