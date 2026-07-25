@@ -8,6 +8,7 @@ import AppFlex from '@/components/layout/AppFlex';
 import AppText from '@/components/typography/AppText';
 import FormContainer from '@/components/form/FormContainer';
 import FormTextInput from '@/components/form/inputs/FormTextInput';
+import FormPasswordInput from '@/components/form/inputs/FormPasswordInput';
 import FormButton from '@/components/form/FormButton';
 import AuthHero from '../components/AuthHero';
 import AuthScreenContainer from '../components/AuthScreenContainer';
@@ -15,7 +16,6 @@ import loginFormSchema, { type LoginFormData } from '../schemas/loginFormSchema'
 
 const LoginScreen = () => {
   const login = useAuthStore(s => s.login);
-  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [authError, setAuthError] = useState<string>();
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginFormSchema),
@@ -67,15 +67,11 @@ const LoginScreen = () => {
           maxLength={8}
           autoCapitalize="none"
         />
-        <FormTextInput
+        <FormPasswordInput
           name="password"
           label="Contraseña"
           size="lg"
           autoCapitalize="none"
-          secureTextEntry={!isPasswordVisible}
-          iconRight={isPasswordVisible ? 'eyeSlash' : 'eye'}
-          iconSize="sm"
-          onPressInRight={() => setIsPasswordVisible(value => !value)}
         />
         {authError ? (
           <AppText
