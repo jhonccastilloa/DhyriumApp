@@ -45,6 +45,7 @@ const LoginScreen = () => {
       <KeyboardAwareScrollView
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
+        bottomOffset={60}
       >
         <AppFlex flex={1} ph="xxl" pt="xl" pb="sm">
           <AppFlex direction="row" align="center" gap="sm">
@@ -128,7 +129,7 @@ export default LoginScreen;
 const styles = StyleSheet.create(theme => ({
   safeArea: {
     flex: 1,
-    },
+  },
   scrollContent: {
     flexGrow: 1,
   },
