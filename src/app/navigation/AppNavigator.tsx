@@ -2,11 +2,21 @@ import {
   DefaultTheme,
   type Theme as NavigationTheme,
 } from '@react-navigation/native';
+import { ActivityIndicator, View } from 'react-native';
 import RootNavigator from './RootNavigator';
-import { useUnistyles } from 'react-native-unistyles';
+import { StyleSheet, useUnistyles } from 'react-native-unistyles';
+import { useEffect } from 'react';
+import { useAuthStore } from '@/modules/auth/state/useAuthStore';
+import { AuthStatus } from '@/modules/auth/types/authStatus.types';
 
 const AppNavigator = () => {
   const { theme } = useUnistyles();
+  const checkStatus = useAuthStore(state => state.checkStatus);
+  const authStatus = useAuthStore(state => state.status);
+
+  useEffect(() => {
+    checkStatus();
+  }, [checkStatus]);
 
   const navigationTheme: NavigationTheme = {
     ...DefaultTheme,
@@ -35,7 +45,28 @@ const AppNavigator = () => {
 
   // Manejar foco por AppState (cuando pasa background -> foreground)
 
+  if (authStatus === AuthStatus.checking) {
+    return (
+      <View
+        style={[
+          styles.loading,
+          { backgroundColor: theme.colors.surface.background.primary },
+        ]}
+      >
+        <ActivityIndicator color={theme.colors.text.link} />
+      </View>
+    );
+  }
+
   return <RootNavigator theme={navigationTheme} />;
 };
 
 export default AppNavigator;
+
+const styles = StyleSheet.create({
+  loading: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});

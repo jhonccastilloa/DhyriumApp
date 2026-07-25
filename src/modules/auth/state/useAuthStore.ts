@@ -14,7 +14,7 @@ interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>()((set, _get) => ({
-  status: AuthStatus.unauthenticated,
+  status: AuthStatus.checking,
 
   login: async (dni: string, password: string) => {
     const data = await AuthService.login(dni, password);
