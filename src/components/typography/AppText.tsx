@@ -66,6 +66,7 @@ const AppText = ({
 
 const styles = StyleSheet.create(theme => ({
   text: {
+    color: theme.colors.text.body,
     variants: {
       variant: {
         ['title.xxl']: theme.typography.title.xxl,
