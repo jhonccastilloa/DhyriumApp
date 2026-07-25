@@ -125,8 +125,8 @@ class DocumentComposerService {
   }
 
   static async downloadArtifact(artifact: ComposerArtifact) {
-    const directory = `${Dirs.DocumentDir}/dhyrium/results`;
-    await ensureDirectory(`${Dirs.DocumentDir}/dhyrium`);
+    const directory = `${Dirs.CacheDir}/dhyrium/results`;
+    await ensureDirectory(`${Dirs.CacheDir}/dhyrium`);
     await ensureDirectory(directory);
     const target = `${directory}/${artifact.id}-${artifact.name}`;
     const token = StorageAdapter.getItem(AUTH_STORAGE_KEYS.accessToken);
