@@ -2,18 +2,18 @@ import {
   useCallback,
   useEffect,
   useRef,
+  useState,
 } from 'react';
 import {
   Alert,
+  FlatList,
   Pressable,
   TextInput,
   View,
+  type ListRenderItem,
 } from 'react-native';
+import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import {
-  Sortable,
-  type SortableRenderItemProps,
-} from 'react-native-reanimated-dnd';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { toast } from 'sonner-native';
 import AppHeader from '@/components/navigation/AppHeader';
@@ -21,8 +21,14 @@ import { AppButton } from '@/components/buttons/AppButton';
 import AppIcon from '@/components/icons/AppIcon';
 import AppText from '@/components/typography/AppText';
 import type { MainAppNavigatorParamList } from '@/app/navigation/MainAppNavigator';
+import { asFileUri } from '@/infrastructure/storage/fileSystemUtils';
 import ContractsService from '@/modules/contracts/services/ContractsService';
-import AppDocumentPageCard from '../components/AppDocumentPageCard';
+import ComposerPageOrderSheet from '../components/ComposerPageOrderSheet';
+import DocumentPageListItem from '../components/DocumentPageListItem';
+import {
+  DOCUMENT_PAGE_CARD_GAP,
+  DOCUMENT_PAGE_CARD_HEIGHT,
+} from '../constants/documentComposerLayout';
 import DocumentComposerService from '../services/DocumentComposerService';
 import { pickPdfDocument } from '../services/documentPickerService';
 import { scanDocuments } from '../services/scannerService';
@@ -34,9 +40,15 @@ type Props = NativeStackScreenProps<
   'ComposerReview'
 >;
 
+const PAGE_ITEM_EXTENT =
+  DOCUMENT_PAGE_CARD_HEIGHT + DOCUMENT_PAGE_CARD_GAP;
+const PageSeparator = () => <View style={styles.pageSeparator} />;
+
 const ComposerReviewScreen = ({ route, navigation }: Props) => {
   const { theme } = useUnistyles();
   const started = useRef(false);
+  const orderSheetRef = useRef<BottomSheetModal>(null);
+  const [orderPageId, setOrderPageId] = useState<string>();
   const session = useDocumentComposerStore(state => state.session);
   const createSession = useDocumentComposerStore(state => state.createSession);
   const setSourcePdf = useDocumentComposerStore(state => state.setSourcePdf);
@@ -46,7 +58,12 @@ const ComposerReviewScreen = ({ route, navigation }: Props) => {
   const replaceWithScannedPaths = useDocumentComposerStore(
     state => state.replaceWithScannedPaths
   );
-  const reorder = useDocumentComposerStore(state => state.reorder);
+  const applyNearbyOrder = useDocumentComposerStore(
+    state => state.applyNearbyOrder
+  );
+  const moveToPosition = useDocumentComposerStore(
+    state => state.moveToPosition
+  );
   const deletePage = useDocumentComposerStore(state => state.deletePage);
   const setName = useDocumentComposerStore(state => state.setName);
   const updateProcess = useDocumentComposerStore(state => state.updateProcess);
@@ -100,7 +117,7 @@ const ComposerReviewScreen = ({ route, navigation }: Props) => {
       expiresAt: source.artifact.expiresAt || null,
     };
     setSourcePdf({
-      uri: `file://${localPath}`,
+      uri: asFileUri(localPath),
       fileName: source.artifact.name,
       artifact,
     });
@@ -183,6 +200,19 @@ const ComposerReviewScreen = ({ route, navigation }: Props) => {
     );
   }, [deletePage, session?.pages]);
 
+  const viewPage = useCallback(
+    (pageId: string) => navigation.navigate('PagePreview', { pageId }),
+    [navigation]
+  );
+
+  const openOrderSheet = useCallback((pageId: string) => {
+    setOrderPageId(pageId);
+  }, []);
+
+  useEffect(() => {
+    if (orderPageId) orderSheetRef.current?.present();
+  }, [orderPageId]);
+
   const repeatAll = () => {
     Alert.alert(
       'Repetir todo el escaneo',
@@ -198,21 +228,30 @@ const ComposerReviewScreen = ({ route, navigation }: Props) => {
     );
   };
 
-  const renderPage = useCallback(
-    (props: SortableRenderItemProps<ComposerPage>) => (
-      <AppDocumentPageCard
-        {...props}
-        onDropPage={reorder}
-        onView={pageId => navigation.navigate('PagePreview', { pageId })}
+  const renderPage: ListRenderItem<ComposerPage> = useCallback(
+    ({ item }) => (
+      <DocumentPageListItem
+        page={item}
+        artifactId={session?.sourceArtifact?.id}
+        onView={viewPage}
         onDelete={confirmDelete}
+        onOrder={openOrderSheet}
       />
     ),
-    [confirmDelete, navigation, reorder]
+    [
+      confirmDelete,
+      openOrderSheet,
+      session?.sourceArtifact?.id,
+      viewPage,
+    ]
   );
 
   if (!session) return <View style={styles.screen} />;
   const busy =
     session.status === 'transferring' || session.status === 'processing';
+  const orderPage = orderPageId
+    ? session.pages.find(page => page.id === orderPageId)
+    : undefined;
 
   return (
     <View style={styles.screen}>
@@ -240,7 +279,11 @@ const ComposerReviewScreen = ({ route, navigation }: Props) => {
             Orden final
           </AppText>
           <AppText variant="text.xs.bold" color="body" numberOfLines={1}>
-            {session.pages.map(page => page.order).join(' · ') || 'Sin páginas'}
+            {session.pages.length > 0
+              ? `${session.pages.length} ${
+                  session.pages.length === 1 ? 'página' : 'páginas'
+                } · Orden personalizado`
+              : 'Sin páginas'}
           </AppText>
         </View>
       </View>
@@ -264,12 +307,22 @@ const ComposerReviewScreen = ({ route, navigation }: Props) => {
         </View>
       ) : null}
 
-      <Sortable
+      <FlatList
         data={session.pages}
+        keyExtractor={page => page.id}
         renderItem={renderPage}
-        itemHeight={146}
-        gap={8}
-        useFlatList
+        getItemLayout={(_data, index) => ({
+          length: DOCUMENT_PAGE_CARD_HEIGHT,
+          offset: theme.spacing.md + PAGE_ITEM_EXTENT * index,
+          index,
+        })}
+        ItemSeparatorComponent={PageSeparator}
+        initialNumToRender={6}
+        maxToRenderPerBatch={5}
+        windowSize={5}
+        updateCellsBatchingPeriod={50}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
         style={styles.list}
         contentContainerStyle={styles.listContent}
       />
@@ -327,6 +380,18 @@ const ComposerReviewScreen = ({ route, navigation }: Props) => {
           />
         </View>
       </View>
+
+      {orderPage ? (
+        <ComposerPageOrderSheet
+          ref={orderSheetRef}
+          page={orderPage}
+          pages={session.pages}
+          artifactId={session.sourceArtifact?.id}
+          onApplyNearbyOrder={applyNearbyOrder}
+          onMoveToPosition={moveToPosition}
+          onDismiss={() => setOrderPageId(undefined)}
+        />
+      ) : null}
     </View>
   );
 };
@@ -358,6 +423,7 @@ const styles = StyleSheet.create(theme => ({
   },
   list: { flex: 1 },
   listContent: { padding: theme.spacing.md, paddingBottom: theme.spacing.xl },
+  pageSeparator: { height: DOCUMENT_PAGE_CARD_GAP },
   actions: {
     padding: theme.spacing.md,
     gap: theme.spacing.sm,

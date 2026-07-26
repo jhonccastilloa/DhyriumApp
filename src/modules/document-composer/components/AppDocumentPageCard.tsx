@@ -1,113 +1,110 @@
-import { Image, Pressable, View } from 'react-native';
-import { PdfView } from 'react-native-pdf-light';
-import { SortableItem } from 'react-native-reanimated-dnd';
-import type { SortableRenderItemProps } from 'react-native-reanimated-dnd';
+import { memo } from 'react';
+import { Pressable, View } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import AppStatusBadge from '@/components/feedback/AppStatusBadge';
 import AppIcon from '@/components/icons/AppIcon';
 import AppText from '@/components/typography/AppText';
+import DocumentPageThumbnail from './DocumentPageThumbnail';
+import { DOCUMENT_PAGE_CARD_HEIGHT } from '../constants/documentComposerLayout';
 import type { ComposerPage } from '../types/documentComposer.types';
 
-type Props = SortableRenderItemProps<ComposerPage> & {
-  onDropPage: (from: number, to: number) => void;
+export type AppDocumentPageCardProps = {
+  page: ComposerPage;
+  thumbnailUri?: string;
+  isThumbnailLoading: boolean;
   onView: (pageId: string) => void;
   onDelete: (pageId: string) => void;
+  onOrder: (pageId: string) => void;
 };
 
 const AppDocumentPageCard = ({
-  item,
-  id,
-  index,
-  onDropPage,
+  page,
+  thumbnailUri,
+  isThumbnailLoading,
   onView,
   onDelete,
-  ...sortableProps
-}: Props) => {
+  onOrder,
+}: AppDocumentPageCardProps) => {
   const { theme } = useUnistyles();
   return (
-    <SortableItem
-      id={id}
-      data={item}
-      {...sortableProps}
-      onDrop={(_itemId, position) => onDropPage(index, position)}
-    >
-      <View style={styles.card}>
-        <View style={styles.thumbnail}>
-          {item.origin === 'scanned' ? (
-            <Image source={{ uri: item.uri }} style={styles.preview} />
-          ) : (
-            <PdfView
-              source={item.uri}
-              page={(item.originalPageNumber || 1) - 1}
-              style={styles.preview}
-            />
-          )}
-          <View style={styles.pageNumber}>
-            <AppText variant="text.xs.bold" color="button">
-              {item.order}
-            </AppText>
-          </View>
-        </View>
-        <View style={styles.copy}>
-          <AppText variant="text.sm.bold" color="headings" numberOfLines={1}>
-            Página {item.order}
+    <View style={styles.card}>
+      <View style={styles.thumbnail}>
+        <DocumentPageThumbnail
+          page={page}
+          thumbnailUri={thumbnailUri}
+          isLoading={isThumbnailLoading}
+        />
+        <View style={styles.pageNumber}>
+          <AppText variant="text.xs.bold" color="button">
+            {page.order}
           </AppText>
-          <AppText variant="text.xs.regular" color="details" numberOfLines={1}>
-            {item.fileName}
-          </AppText>
-          <AppText variant="text.xs.regular" color="details" numberOfLines={1}>
-            {item.origin === 'scanned'
-              ? item.uri.replace(/^.*\//, '…/')
-              : `PDF original · página ${item.originalPageNumber}`}
-          </AppText>
-          <AppStatusBadge
-            label={
-              item.legibilityStatus === 'legible'
-                ? 'Legible'
-                : 'Por revisar'
-            }
-            tone={
-              item.legibilityStatus === 'legible' ? 'success' : 'warning'
-            }
-          />
-        </View>
-        <View style={styles.actions}>
-          <Pressable
-            onPress={() => onView(item.id)}
-            style={styles.iconButton}
-          >
-            <AppIcon
-              name="eye"
-              size={20}
-              mColor={theme.colors.icon.secondary}
-            />
-          </Pressable>
-          <Pressable
-            onPress={() => onDelete(item.id)}
-            style={styles.iconButton}
-          >
-            <AppIcon
-              name="trash"
-              size={20}
-              mColor={theme.colors.text.error}
-            />
-          </Pressable>
-          <SortableItem.Handle style={styles.handle}>
-            <AppIcon
-              name="dotsSixVertical"
-              size={26}
-              mColor={theme.colors.navigation.active}
-            />
-          </SortableItem.Handle>
         </View>
       </View>
-    </SortableItem>
+      <View style={styles.copy}>
+        <AppText variant="text.sm.bold" color="headings" numberOfLines={1}>
+          Página {page.order}
+        </AppText>
+        <AppText variant="text.xs.regular" color="details" numberOfLines={1}>
+          {page.fileName}
+        </AppText>
+        <AppText variant="text.xs.regular" color="details" numberOfLines={1}>
+          {page.origin === 'scanned'
+            ? page.uri.replace(/^.*\//, '…/')
+            : `PDF original · página ${page.originalPageNumber}`}
+        </AppText>
+        <AppStatusBadge
+          label={
+            page.legibilityStatus === 'legible'
+              ? 'Legible'
+              : 'Por revisar'
+          }
+          tone={
+            page.legibilityStatus === 'legible' ? 'success' : 'warning'
+          }
+        />
+      </View>
+      <View style={styles.actions}>
+        <Pressable
+          accessibilityLabel={`Ver página ${page.order}`}
+          onPress={() => onView(page.id)}
+          style={styles.iconButton}
+        >
+          <AppIcon
+            name="eye"
+            size={20}
+            mColor={theme.colors.icon.secondary}
+          />
+        </Pressable>
+        <Pressable
+          accessibilityLabel={`Eliminar página ${page.order}`}
+          onPress={() => onDelete(page.id)}
+          style={styles.iconButton}
+        >
+          <AppIcon
+            name="trash"
+            size={20}
+            mColor={theme.colors.text.error}
+          />
+        </Pressable>
+        <Pressable
+          accessibilityLabel={`Ordenar página ${page.order}`}
+          onPress={() => onOrder(page.id)}
+          style={styles.handle}
+        >
+          <AppIcon
+            name="sortAscending"
+            size={22}
+            mColor={theme.colors.navigation.active}
+          />
+        </Pressable>
+      </View>
+    </View>
   );
 };
 
 const styles = StyleSheet.create(theme => ({
   card: {
-    height: 138,
+    height: DOCUMENT_PAGE_CARD_HEIGHT,
     padding: theme.spacing.sm,
     flexDirection: 'row',
     alignItems: 'center',
@@ -125,13 +122,13 @@ const styles = StyleSheet.create(theme => ({
     borderRadius: theme.radius.sm,
     backgroundColor: theme.colors.surface.background.elements,
   },
-  preview: { width: '100%', height: '100%', resizeMode: 'cover' },
   pageNumber: {
     position: 'absolute',
     left: theme.spacing.xs,
     top: theme.spacing.xs,
     minWidth: 24,
     height: 24,
+    paddingHorizontal: theme.spacing.xs,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: theme.radius.pill,
@@ -162,4 +159,4 @@ const styles = StyleSheet.create(theme => ({
   },
 }));
 
-export default AppDocumentPageCard;
+export default memo(AppDocumentPageCard);

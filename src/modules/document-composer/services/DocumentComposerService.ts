@@ -1,5 +1,9 @@
 import { Dirs, FileSystem } from 'react-native-file-access';
 import StorageAdapter from '@/infrastructure/storage/StorageAdapter';
+import {
+  asFileUri,
+  ensureDirectory,
+} from '@/infrastructure/storage/fileSystemUtils';
 import api, { API_BASE_URL } from '@/infrastructure/http/apiClient';
 import { AUTH_STORAGE_KEYS } from '@/modules/auth/constants/authStorageKeys';
 import type {
@@ -12,18 +16,12 @@ type ArtifactApiResponse = {
 };
 
 const asUploadUri = (uri: string) =>
-  uri.startsWith('file://') || uri.startsWith('content://')
-    ? uri
-    : `file://${uri}`;
+  uri.startsWith('content://') ? uri : asFileUri(uri);
 
 const absoluteApiUrl = (path: string) => {
   if (/^https?:\/\//i.test(path)) return path;
   const origin = API_BASE_URL.replace(/\/api\/v1\/?$/i, '');
   return `${origin}${path.startsWith('/') ? path : `/${path}`}`;
-};
-
-const ensureDirectory = async (path: string) => {
-  if (!(await FileSystem.exists(path))) await FileSystem.mkdir(path);
 };
 
 class DocumentComposerService {

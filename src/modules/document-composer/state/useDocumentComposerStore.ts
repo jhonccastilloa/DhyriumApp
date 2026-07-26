@@ -2,10 +2,17 @@ import { Dirs, FileSystem } from 'react-native-file-access';
 import { create } from 'zustand';
 import StorageAdapter from '@/infrastructure/storage/StorageAdapter';
 import {
+  asFileUri,
+  ensureDirectory,
+  stripFileScheme,
+} from '@/infrastructure/storage/fileSystemUtils';
+import {
   appendPages,
-  movePage,
+  type PagePlacement,
+  movePageToPosition,
   normalizePageOrder,
   removePage,
+  replacePageRangeByIds,
 } from '../domain/pageOrder';
 import type {
   ComposerDestination,
@@ -35,13 +42,6 @@ const persistDrafts = (drafts: ComposerSession[]) => {
   StorageAdapter.setItem(DRAFTS_STORAGE_KEY, JSON.stringify(drafts));
 };
 
-const stripFileScheme = (uri: string) => uri.replace(/^file:\/\//, '');
-const asFileUri = (path: string) =>
-  path.startsWith('file://') ? path : `file://${path}`;
-const ensureDirectory = async (path: string) => {
-  if (!(await FileSystem.exists(path))) await FileSystem.mkdir(path);
-};
-
 type ComposerStore = {
   session: ComposerSession | null;
   drafts: ComposerSession[];
@@ -58,7 +58,12 @@ type ComposerStore = {
   }) => void;
   addScannedPaths: (paths: string[]) => Promise<void>;
   replaceWithScannedPaths: (paths: string[]) => Promise<void>;
-  reorder: (fromIndex: number, toIndex: number) => void;
+  applyNearbyOrder: (orderedPageIds: string[]) => void;
+  moveToPosition: (
+    pageId: string,
+    targetPosition: number,
+    placement: PagePlacement
+  ) => void;
   deletePage: (pageId: string) => Promise<void>;
   markLegible: (pageId: string) => void;
   setName: (name: string) => void;
@@ -76,7 +81,7 @@ const updateSessionPages = (
   pages: ComposerPage[]
 ) => {
   const session = get().session;
-  if (!session) return;
+  if (!session || pages === session.pages) return;
   set({
     session: {
       ...session,
@@ -187,10 +192,29 @@ export const useDocumentComposerStore = create<ComposerStore>((set, get) => ({
     updateSessionPages(set, get, normalizePageOrder(added));
   },
 
-  reorder: (fromIndex, toIndex) => {
+  applyNearbyOrder: orderedPageIds => {
     const session = get().session;
     if (!session) return;
-    updateSessionPages(set, get, movePage(session.pages, fromIndex, toIndex));
+    updateSessionPages(
+      set,
+      get,
+      replacePageRangeByIds(session.pages, orderedPageIds)
+    );
+  },
+
+  moveToPosition: (pageId, targetPosition, placement) => {
+    const session = get().session;
+    if (!session) return;
+    updateSessionPages(
+      set,
+      get,
+      movePageToPosition(
+        session.pages,
+        pageId,
+        targetPosition,
+        placement
+      )
+    );
   },
 
   deletePage: async pageId => {

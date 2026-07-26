@@ -1,0 +1,2 @@
+export const DOCUMENT_PAGE_CARD_HEIGHT = 138;
+export const DOCUMENT_PAGE_CARD_GAP = 8;
