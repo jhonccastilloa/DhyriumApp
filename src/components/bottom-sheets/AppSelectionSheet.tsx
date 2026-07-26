@@ -113,8 +113,6 @@ const AppSelectionSheet = <T,>({
 
           return (
             <Pressable
-              accessibilityRole="radio"
-              accessibilityState={{ selected: isSelected }}
               onPress={() => selectOption(item)}
               style={({ pressed }) => [
                 styles.option,

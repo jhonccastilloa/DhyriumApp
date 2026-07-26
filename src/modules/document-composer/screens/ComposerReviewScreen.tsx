@@ -237,7 +237,6 @@ const ComposerReviewScreen = ({ route, navigation }: Props) => {
           placeholder="Nombre del PDF"
           placeholderTextColor={theme.colors.text.details}
           style={styles.nameInput}
-          accessibilityLabel="Nombre del PDF"
         />
         <View style={styles.orderSummary}>
           <AppText variant="text.xs.regular" color="details">
@@ -282,7 +281,6 @@ const ComposerReviewScreen = ({ route, navigation }: Props) => {
         <View style={styles.secondaryActions}>
           <Pressable
             onPress={() => void startScanner(true)}
-            accessibilityRole="button"
             style={styles.secondaryButton}
           >
             <PlusIcon size={19} color={theme.colors.navigation.active} />
@@ -292,7 +290,6 @@ const ComposerReviewScreen = ({ route, navigation }: Props) => {
           </Pressable>
           <Pressable
             onPress={repeatAll}
-            accessibilityRole="button"
             style={styles.secondaryButton}
           >
             <ArrowClockwiseIcon

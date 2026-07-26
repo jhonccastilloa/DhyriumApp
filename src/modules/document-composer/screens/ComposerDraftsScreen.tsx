@@ -67,8 +67,6 @@ const ComposerDraftsScreen = ({ navigation }: Props) => {
             </View>
             <Pressable
               onPress={() => confirmRemove(item)}
-              accessibilityRole="button"
-              accessibilityLabel={`Eliminar borrador ${item.name}`}
               style={styles.delete}
             >
               <TrashIcon size={20} color={theme.colors.text.error} />

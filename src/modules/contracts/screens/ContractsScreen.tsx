@@ -196,8 +196,6 @@ const ContractsScreen = () => {
         rightAction={
           <Pressable
             onPress={() => companySheet.current?.present()}
-            accessibilityRole="button"
-            accessibilityLabel="Cambiar empresa"
             style={({ pressed }) => [
               styles.headerAction,
               pressed && styles.pressed,

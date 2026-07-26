@@ -27,8 +27,6 @@ const AppFilterChip = ({
   return (
     <Pressable
       onPress={onPress}
-      accessibilityRole={removable ? 'button' : 'checkbox'}
-      accessibilityState={removable ? undefined : { checked: selected }}
       style={({ pressed }) => [
         styles.chip,
         pressed && styles.pressed,

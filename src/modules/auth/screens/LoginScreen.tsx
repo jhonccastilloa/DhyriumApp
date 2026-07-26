@@ -104,7 +104,6 @@ const LoginScreen = () => {
                 <AppText
                   variant="text.sm.regular"
                   color="error"
-                  accessibilityRole="alert"
                 >
                   {authError}
                 </AppText>

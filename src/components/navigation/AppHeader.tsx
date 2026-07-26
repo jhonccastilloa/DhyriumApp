@@ -39,8 +39,6 @@ const AppHeader = ({
         {showBack ? (
           <Pressable
             onPress={handleBack}
-            accessibilityRole="button"
-            accessibilityLabel="Volver"
             hitSlop={8}
             style={({ pressed }) => [
               styles.backButton,

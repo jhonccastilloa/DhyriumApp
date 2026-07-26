@@ -114,7 +114,6 @@ const ContractFiltersSheet = ({
           </View>
           <Pressable
             onPress={() => setDraft(EMPTY_CONTRACT_FILTERS)}
-            accessibilityRole="button"
             hitSlop={8}
           >
             <AppText variant="text.sm.bold" color="link">
@@ -207,8 +206,6 @@ const ContractFiltersSheet = ({
                     instrumentType: selected ? undefined : option.value,
                   }))
                 }
-                accessibilityRole="radio"
-                accessibilityState={{ selected }}
                 style={({ pressed }) => [
                   styles.instrument,
                   selected && styles.instrumentSelected,

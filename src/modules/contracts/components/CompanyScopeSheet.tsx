@@ -72,8 +72,6 @@ const CompanyScopeSheet = ({
                 onSelect(scope);
                 sheetRef.current?.dismiss();
               }}
-              accessibilityRole="radio"
-              accessibilityState={{ selected: isSelected }}
               style={({ pressed }) => [
                 styles.option,
                 isSelected && styles.optionSelected,

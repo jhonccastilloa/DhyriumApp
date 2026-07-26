@@ -93,8 +93,6 @@ const MoreScreen = () => {
                   onPress={() =>
                     setPreference(option.value as ThemePreference)
                   }
-                  accessibilityRole="radio"
-                  accessibilityState={{ selected }}
                   style={({ pressed }) => [
                     styles.option,
                     index > 0 && styles.optionBorder,
@@ -131,7 +129,6 @@ const MoreScreen = () => {
 
         <Pressable
           onPress={confirmLogout}
-          accessibilityRole="button"
           style={({ pressed }) => [
             styles.logout,
             pressed && styles.pressed,

@@ -99,7 +99,6 @@ const ToolsScreen = () => {
               BORRADORES
             </AppText>
             <Pressable
-              accessibilityRole="button"
               onPress={() => navigation.navigate('ComposerDrafts')}
               style={({ pressed }) => [
                 styles.draftsButton,

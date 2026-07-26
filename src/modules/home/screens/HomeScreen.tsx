@@ -84,8 +84,6 @@ const HomeScreen = () => {
                   key={module.key}
                   emphasized={module.enabled}
                   disabled={!module.enabled}
-                  accessibilityState={{ disabled: !module.enabled }}
-                  accessibilityLabel={`${module.name}${module.enabled ? '' : ', próximamente'}`}
                   onPress={
                     module.enabled
                       ? () => navigation.navigate('Contracts')

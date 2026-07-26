@@ -4,8 +4,6 @@ import { StyleSheet } from 'react-native-unistyles';
 const AppProgressBar = ({ value }: { value: number }) => (
   <View
     style={styles.track}
-    accessibilityRole="progressbar"
-    accessibilityValue={{ min: 0, max: 100, now: value }}
   >
     <View
       style={[

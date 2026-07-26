@@ -31,11 +31,6 @@ const AppOptionItem = ({
       {...pressableProps}
       onPress={onPress}
       disabled={isDisabled}
-      accessibilityRole={pressableProps.accessibilityRole ?? 'button'}
-      accessibilityState={{
-        ...pressableProps.accessibilityState,
-        disabled: isDisabled,
-      }}
       style={({ pressed }) => [
         styles.container,
         pressed && !isDisabled && styles.pressed,

@@ -44,7 +44,6 @@ const AppCard = ({
       {...(props as PressableProps)}
       onPress={onPress}
       disabled={disabled}
-      accessibilityRole="button"
       style={({ pressed }) => [
         styles.card,
         pressed && styles.pressed,

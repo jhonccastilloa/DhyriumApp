@@ -79,16 +79,12 @@ const AppDocumentPageCard = ({
         <View style={styles.actions}>
           <Pressable
             onPress={() => onView(item.id)}
-            accessibilityRole="button"
-            accessibilityLabel={`Ver página ${item.order}`}
             style={styles.iconButton}
           >
             <EyeIcon size={20} color={theme.colors.icon.secondary} />
           </Pressable>
           <Pressable
             onPress={() => onDelete(item.id)}
-            accessibilityRole="button"
-            accessibilityLabel={`Eliminar página ${item.order}`}
             style={styles.iconButton}
           >
             <TrashIcon size={20} color={theme.colors.text.error} />

@@ -80,7 +80,7 @@ API DTO (types) -> service -> mapper -> entidad de dominio (entities) -> UI/stat
 - `src/config/env.ts` valida las variables al iniciar. Mantén allí la lista central de variables requeridas; actualmente incluye `MMKV_ENCRYPTION_KEY` y `APP_ENV` (`DEV` o `PROD`).
 - No uses valores secretos por defecto. Para documentar configuración, crea o actualiza un archivo de ejemplo sin valores reales, como `.env.example`.
 
-## UI, tema y accesibilidad
+## UI y tema
 
 - Usa Unistyles y los tokens de `src/styles/theme`. Prefiere colores semánticos (`theme.colors.*`), espaciado (`theme.spacing.*`), tipografía y radios del tema antes que valores literales.
 - `AppText`, `AppFlex`, `AppButton`, `AppTextInput`, `AppIcon`, bottom sheets y `ScreenContainer` son las abstracciones compartidas preferidas. Extiéndelas antes de duplicar estilos o comportamiento de React Native.
@@ -89,7 +89,6 @@ API DTO (types) -> service -> mapper -> entidad de dominio (entities) -> UI/stat
 - Los componentes estructurales terminan en `Container`. Los componentes de dominio se nombran por entidad y representación, sin prefijo `App`.
 - El nombre de archivo, componente exportado y props deben coincidir: `AppButton.tsx`, `AppButton`, `AppButtonProps`.
 - Para estilos estáticos usa `StyleSheet.create` de `react-native-unistyles`. Para valores dinámicos de tokens usa `useUnistyles`. No crees un segundo sistema de tema.
-- Todo control presionable debe comunicar estado deshabilitado y un rol accesible cuando no lo proporcione la plataforma. Conserva los patrones de `AppButton` y `AppOptionItem`.
 - Si una pantalla contiene inputs, considera `KeyboardAwareScrollView` y `keyboardShouldPersistTaps="handled"`, como en el flujo de autenticación.
 
 ## Formularios y validación

@@ -33,7 +33,6 @@ const ContractDocumentNodeCard = ({
   return (
     <Pressable
       onPress={onPress}
-      accessibilityRole="button"
       style={({ pressed }) => [
         styles.card,
         pressed && styles.pressed,

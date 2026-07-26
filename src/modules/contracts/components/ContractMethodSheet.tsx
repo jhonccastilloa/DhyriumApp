@@ -51,7 +51,6 @@ const ContractMethodSheet = ({
           sheetRef.current?.dismiss();
           onPress();
         }}
-        accessibilityRole="button"
         style={({ pressed }) => [
           styles.action,
           pressed && styles.pressed,

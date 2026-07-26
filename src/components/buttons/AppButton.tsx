@@ -64,8 +64,6 @@ export function AppButton({
     <Pressable
       {...props}
       disabled={isDisabled}
-      accessibilityRole={props.accessibilityRole ?? 'button'}
-      accessibilityState={{ disabled: isDisabled }}
       style={({ pressed }) => [
         styles.button,
         pressed && !isDisabled && styles.pressed,

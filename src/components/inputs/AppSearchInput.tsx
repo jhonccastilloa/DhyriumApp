@@ -25,13 +25,10 @@ const AppSearchInput = ({
         value={value}
         placeholderTextColor={theme.colors.text.details}
         style={styles.input}
-        accessibilityRole="search"
       />
       {value && onClear ? (
         <Pressable
           onPress={onClear}
-          accessibilityRole="button"
-          accessibilityLabel="Limpiar búsqueda"
           hitSlop={10}
         >
           <XIcon size={18} color={theme.colors.icon.secondary} />
