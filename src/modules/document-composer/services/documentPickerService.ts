@@ -15,6 +15,16 @@ export type PickedPdf =
       size: number | null;
     };
 
+const normalizeLocalFileUri = (uri: string) => {
+  if (!uri.startsWith('file://')) return uri;
+
+  try {
+    return `file://${decodeURIComponent(uri.slice('file://'.length))}`;
+  } catch {
+    return uri;
+  }
+};
+
 export const pickPdfDocument = async (): Promise<PickedPdf> => {
   try {
     const [selected] = await pick({
@@ -39,7 +49,7 @@ export const pickPdfDocument = async (): Promise<PickedPdf> => {
     }
     return {
       status: 'success',
-      uri: copy.localUri,
+      uri: normalizeLocalFileUri(copy.localUri),
       fileName,
       size: selected.size,
     };
