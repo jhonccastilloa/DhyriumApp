@@ -3,18 +3,19 @@ import React from 'react';
 import AppFlex, { AppFlexProps } from './AppFlex';
 import { StyleSheet } from 'react-native-unistyles';
 
-interface ScreenContainerProps extends AppFlexProps {
+type ScreenContainerProps = AppFlexProps & {
   scrollable?: boolean;
   noPaddingTop?: boolean;
-}
+};
 const ScreenContainer = ({
   style,
   scrollable = false,
+  noPaddingTop = false,
   ...props
 }: ScreenContainerProps) => {
   const sContainer = {
     ...styles.container,
-    ...(props.noPaddingTop && { paddingTop: 0 }),
+    ...(noPaddingTop && { paddingTop: 0 }),
   };
   if (scrollable)
     return (

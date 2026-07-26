@@ -1,4 +1,4 @@
-import { ViewStyle } from 'react-native';
+import type { StyleProp, ViewStyle } from 'react-native';
 import { FieldValues, FormProvider, UseFormReturn } from 'react-hook-form';
 import { ZodObject, ZodRawShape } from 'zod';
 import { createContext, ReactNode } from 'react';
@@ -13,14 +13,14 @@ export interface FormContainerContextInterface {
 export const FormContainerContext =
   createContext<FormContainerContextInterface | null>(null);
 
-interface FormContainerProps<FormData extends FieldValues> extends AppFlexProps {
+type FormContainerProps<FormData extends FieldValues> = AppFlexProps & {
   form: UseFormReturn<FormData>;
   schema?: ZodObject<ZodRawShape>;
   onSubmit: () => void;
   children: ReactNode;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
   keyboardAware?: boolean;
-}
+};
 const FormContainer = <FormData extends FieldValues>({
   form,
   onSubmit,

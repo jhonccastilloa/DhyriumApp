@@ -1,24 +1,22 @@
-import { SpacingTheme } from '@/styles/theme/tokens';
-import React, { ReactNode } from 'react';
-import { View, ViewStyle, StyleProp, StyleSheet } from 'react-native';
-import { useUnistyles } from 'react-native-unistyles';
+import type { SpacingTheme } from '@/styles/theme/tokens';
+import type { StyleProp, ViewProps, ViewStyle } from 'react-native';
+import { View } from 'react-native';
+import { StyleSheet } from 'react-native-unistyles';
 
-type FlexVariant = 'default' | 'spread' | 'center' | 'end';
-
-export interface AppFlexProps {
-  children?: ReactNode;
+interface AppFlexBaseProps extends Omit<ViewProps, 'style'> {
   style?: StyleProp<ViewStyle>;
   direction?: 'row' | 'column';
   align?: ViewStyle['alignItems'];
   justify?: ViewStyle['justifyContent'];
   gap?: SpacingTheme;
-  variant?: FlexVariant;
   flex?: ViewStyle['flex'];
+  flexGrow?: ViewStyle['flexGrow'];
   flexShrink?: ViewStyle['flexShrink'];
+  flexBasis?: ViewStyle['flexBasis'];
+  alignSelf?: ViewStyle['alignSelf'];
   height?: ViewStyle['height'];
   width?: ViewStyle['width'];
   size?: ViewStyle['height'];
-  circle?: boolean;
   pv?: SpacingTheme;
   ph?: SpacingTheme;
   pt?: SpacingTheme;
@@ -30,17 +28,33 @@ export interface AppFlexProps {
   flexWrap?: ViewStyle['flexWrap'];
 }
 
-const getVariantStyle = (variant?: FlexVariant): ViewStyle => {
-  switch (variant) {
-    case 'spread':
-      return { justifyContent: 'space-between' };
-    case 'center':
-      return { justifyContent: 'center', alignItems: 'center' };
-    case 'end':
-      return { justifyContent: 'flex-end' };
-    default:
-      return {};
-  }
+export type AppFlexProps =
+  | (AppFlexBaseProps & { circle?: false })
+  | (AppFlexBaseProps & { circle: true; size: ViewStyle['height'] });
+
+type SpacingStyleProperty =
+  | 'gap'
+  | 'padding'
+  | 'paddingVertical'
+  | 'paddingHorizontal'
+  | 'paddingTop'
+  | 'paddingBottom'
+  | 'paddingLeft'
+  | 'paddingRight';
+
+type SpacingVariant = Partial<Record<SpacingStyleProperty, number>>;
+
+const createSpacingVariants = (
+  spacing: Readonly<Record<SpacingTheme, number>>,
+  property: SpacingStyleProperty,
+): Record<SpacingTheme, SpacingVariant> => {
+  const variants = {} as Record<SpacingTheme, SpacingVariant>;
+
+  (Object.keys(spacing) as SpacingTheme[]).forEach(key => {
+    variants[key] = { [property]: spacing[key] };
+  });
+
+  return variants;
 };
 
 const AppFlex = ({
@@ -50,9 +64,11 @@ const AppFlex = ({
   align,
   justify,
   gap = 'none',
-  variant = 'default',
-  flex = undefined,
+  flex,
+  flexGrow,
   flexShrink,
+  flexBasis,
+  alignSelf,
   height,
   width,
   size,
@@ -66,34 +82,39 @@ const AppFlex = ({
   pr,
   pt,
   flexWrap,
+  ...rest
 }: AppFlexProps) => {
-  // const theme = useTheme();
-  const { theme } = useUnistyles();
+  styles.useVariants({
+    gap,
+    p,
+    pv,
+    ph,
+    pt,
+    pb,
+    pl,
+    pr,
+  });
 
   return (
     <View
+      {...rest}
       style={[
         {
           flexDirection: direction,
           alignItems: align,
           justifyContent: justify,
-          gap: theme.spacing[gap],
           flex,
+          flexGrow,
           height: size ?? height,
           width: size ?? width,
           flexShrink,
+          flexBasis,
+          alignSelf,
           flexWrap: flexWrap,
         },
-        pt && { paddingTop: theme.spacing[pt] },
-        pb && { paddingBottom: theme.spacing[pb] },
-        pl && { paddingLeft: theme.spacing[pl] },
-        pr && { paddingRight: theme.spacing[pr] },
-        pv && { paddingVertical: theme.spacing[pv] },
-        ph && { paddingHorizontal: theme.spacing[ph] },
-        p && { padding: theme.spacing[p] },
-        !!r && { borderRadius: r },
+        styles.container,
+        r !== undefined && { borderRadius: r },
         circle && styles.circle,
-        getVariantStyle(variant),
         style,
       ]}
     >
@@ -102,8 +123,20 @@ const AppFlex = ({
   );
 };
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create(theme => ({
+  container: {
+    variants: {
+      gap: createSpacingVariants(theme.spacing, 'gap'),
+      p: createSpacingVariants(theme.spacing, 'padding'),
+      pv: createSpacingVariants(theme.spacing, 'paddingVertical'),
+      ph: createSpacingVariants(theme.spacing, 'paddingHorizontal'),
+      pt: createSpacingVariants(theme.spacing, 'paddingTop'),
+      pb: createSpacingVariants(theme.spacing, 'paddingBottom'),
+      pl: createSpacingVariants(theme.spacing, 'paddingLeft'),
+      pr: createSpacingVariants(theme.spacing, 'paddingRight'),
+    },
+  },
   circle: { borderRadius: '50%' },
-});
+}));
 
 export default AppFlex;
