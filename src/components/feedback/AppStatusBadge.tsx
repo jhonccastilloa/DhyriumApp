@@ -1,17 +1,13 @@
 import { View } from 'react-native';
-import { StyleSheet } from 'react-native-unistyles';
+import { StyleSheet, UnistylesVariants } from 'react-native-unistyles';
 import AppText from '@/components/typography/AppText';
 
-export type AppStatusTone =
-  | 'neutral'
-  | 'info'
-  | 'success'
-  | 'warning'
-  | 'error';
+type AppStatusBadgeVariants = UnistylesVariants<typeof styles>;
 
-type AppStatusBadgeProps = {
+export type AppStatusTone = NonNullable<AppStatusBadgeVariants['tone']>;
+
+type AppStatusBadgeProps = AppStatusBadgeVariants & {
   label: string;
-  tone?: AppStatusTone;
 };
 
 const AppStatusBadge = ({

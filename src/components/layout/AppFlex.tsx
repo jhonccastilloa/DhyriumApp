@@ -1,15 +1,13 @@
-import type { SpacingTheme } from '@/styles/theme/tokens';
 import { createTokenVariants } from '@/styles/createTokenVariants';
 import type { StyleProp, ViewProps, ViewStyle } from 'react-native';
 import { View } from 'react-native';
-import { StyleSheet } from 'react-native-unistyles';
+import { StyleSheet, UnistylesVariants } from 'react-native-unistyles';
 
 interface AppFlexBaseProps extends Omit<ViewProps, 'style'> {
   style?: StyleProp<ViewStyle>;
   direction?: 'row' | 'column';
   align?: ViewStyle['alignItems'];
   justify?: ViewStyle['justifyContent'];
-  gap?: SpacingTheme;
   flex?: ViewStyle['flex'];
   flexGrow?: ViewStyle['flexGrow'];
   flexShrink?: ViewStyle['flexShrink'];
@@ -18,20 +16,15 @@ interface AppFlexBaseProps extends Omit<ViewProps, 'style'> {
   height?: ViewStyle['height'];
   width?: ViewStyle['width'];
   size?: ViewStyle['height'];
-  pv?: SpacingTheme;
-  ph?: SpacingTheme;
-  pt?: SpacingTheme;
-  pb?: SpacingTheme;
-  pl?: SpacingTheme;
-  pr?: SpacingTheme;
-  p?: SpacingTheme;
   r?: ViewStyle['borderRadius'];
   flexWrap?: ViewStyle['flexWrap'];
 }
 
-export type AppFlexProps =
-  | (AppFlexBaseProps & { circle?: false })
-  | (AppFlexBaseProps & { circle: true; size: ViewStyle['height'] });
+type AppFlexVariants = UnistylesVariants<typeof styles>;
+
+export type AppFlexProps = AppFlexBaseProps &
+  AppFlexVariants &
+  (| { circle?: false } | { circle: true; size: ViewStyle['height'] });
 
 const AppFlex = ({
   children,

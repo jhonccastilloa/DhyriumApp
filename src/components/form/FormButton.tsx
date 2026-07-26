@@ -1,9 +1,9 @@
 import { useFormContainerContext } from './useFormContainerContext';
 import { AppButton, AppButtonProps } from '../buttons/AppButton';
 
-interface FormButtonProps extends AppButtonProps {
+type FormButtonProps = AppButtonProps & {
   evaluateDirty?: boolean;
-}
+};
 
 const FormButton = ({
   evaluateDirty = false,

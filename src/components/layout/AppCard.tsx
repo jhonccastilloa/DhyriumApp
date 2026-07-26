@@ -5,14 +5,20 @@ import {
   View,
   type ViewProps,
 } from 'react-native';
-import { StyleSheet } from 'react-native-unistyles';
+import { StyleSheet, UnistylesVariants } from 'react-native-unistyles';
+
+type AppCardVariants = Omit<
+  UnistylesVariants<typeof styles>,
+  'emphasized'
+> & {
+  emphasized?: boolean;
+};
 
 type AppCardProps = PropsWithChildren<
   (PressableProps | ViewProps) & {
     onPress?: PressableProps['onPress'];
-    emphasized?: boolean;
     disabled?: boolean;
-  }
+  } & AppCardVariants
 >;
 
 const AppCard = ({

@@ -7,26 +7,33 @@ import {
   StyleProp,
   TextStyle,
 } from 'react-native';
-import { StyleSheet } from 'react-native-unistyles';
+import { StyleSheet, UnistylesVariants } from 'react-native-unistyles';
 import AppIcon from '../icons/AppIcon';
 import { IconName } from '../icons/iconRegistry';
 import { IconSizeTheme } from '@/styles/theme/tokens';
 import { IconColorTheme } from '@/styles/theme/semanticColors';
 
-export interface AppTextInputProps extends TextInputProps {
+type AppTextInputVariants = Omit<
+  UnistylesVariants<typeof styles>,
+  'noBorder' | 'shadow'
+> & {
+  noBorder?: boolean;
+  shadow?: boolean;
+};
+
+export interface AppTextInputProps
+  extends TextInputProps,
+    AppTextInputVariants {
   allowedRegex?: RegExp;
   containerStyle?: StyleProp<ViewStyle>;
   inputStyle?: StyleProp<TextStyle>;
   onChangeValue?: (value: string) => void;
-  noBorder?: boolean;
-  shadow?: boolean;
   iconLeft?: IconName;
   iconRight?: IconName;
   iconSize?: IconSizeTheme;
   iconColor?: IconColorTheme;
   onPressInRight?: () => void;
   iconContainerStyle?: StyleProp<ViewStyle>;
-  size?: 'md' | 'lg';
 }
 
 const AppTextInput = ({

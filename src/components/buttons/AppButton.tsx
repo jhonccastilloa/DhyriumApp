@@ -9,16 +9,20 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
-import { StyleSheet } from 'react-native-unistyles';
+import { StyleSheet, UnistylesVariants } from 'react-native-unistyles';
 import { IconName } from '../icons/iconRegistry';
 import { IconSizeTheme } from '@/styles/theme/tokens';
 import AppIcon from '../icons/AppIcon';
 
-export type ButtonSize = 'lg' | 'md' | 'sm' | 'action';
-export type ButtonVariant = 'solid' | 'outline' | 'ghost' | 'link';
-export type ButtonAlignment = 'left' | 'right' | 'center' | 'full';
+type AppButtonVariants = Omit<
+  UnistylesVariants<typeof styles>,
+  'noBorder'
+> & {
+  noBorder?: boolean;
+};
 
-export interface AppButtonProps extends PressableProps {
+export type AppButtonProps = PressableProps &
+  AppButtonVariants & {
   text?: string;
   children?: ReactNode;
   leftIcon?: IconName;
@@ -26,12 +30,8 @@ export interface AppButtonProps extends PressableProps {
   iconSize?: IconSizeTheme;
   textStyle?: StyleProp<TextStyle>;
   iconContainerStyle?: StyleProp<ViewStyle>;
-  size?: ButtonSize;
-  variant?: ButtonVariant;
-  align?: ButtonAlignment;
-  noBorder?: boolean;
   isLoading?: boolean;
-}
+};
 
 export function AppButton({
   text,
@@ -216,6 +216,8 @@ const styles = StyleSheet.create(theme => ({
           textDecorationLine: 'none',
         },
       },
+      align: {},
+      noBorder: {},
       disabled: {
         true: {
           color: theme.colors.text.disabled,

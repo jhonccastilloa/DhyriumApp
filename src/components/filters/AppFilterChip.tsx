@@ -1,9 +1,15 @@
 import { Pressable } from 'react-native';
 import { XIcon } from 'phosphor-react-native';
-import { StyleSheet, useUnistyles } from 'react-native-unistyles';
+import {
+  StyleSheet,
+  UnistylesVariants,
+  useUnistyles,
+} from 'react-native-unistyles';
 import AppText from '@/components/typography/AppText';
 
-type AppFilterChipProps = {
+type AppFilterChipVariants = UnistylesVariants<typeof styles>;
+
+type AppFilterChipProps = Omit<AppFilterChipVariants, 'selected'> & {
   label: string;
   selected?: boolean;
   removable?: boolean;
