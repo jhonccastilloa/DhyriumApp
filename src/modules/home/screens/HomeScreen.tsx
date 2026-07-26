@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import dayjs from '@/utils/dayjsSpanish';
 import AppText from '@/components/typography/AppText';
 import AppCard from '@/components/layout/AppCard';
+import AppFlex from '@/components/layout/AppFlex';
 import { useProfileQuery } from '@/modules/profile/queries/useProfileQuery';
 import { HOME_MODULE_GROUPS } from '../constants/homeModules';
 import type { HomeNavigatorParamList } from '../navigation/HomeNavigator';
@@ -38,11 +39,12 @@ const HomeScreen = () => {
       contentContainerStyle={[
         styles.content,
         { paddingTop: insets.top + 20 },
+        { paddingBottom: insets.bottom + 20 },
       ]}
       showsVerticalScrollIndicator={false}
     >
-      <View style={styles.userHeader}>
-        <View style={styles.userCopy}>
+      <AppFlex direction="row" align="center" gap="md">
+        <AppFlex flex={1} gap="xs">
           <AppText variant="text.sm.regular" color="details">
             {today.format('dddd, D [de] MMMM')}
           </AppText>
@@ -52,29 +54,29 @@ const HomeScreen = () => {
           <AppText variant="text.md.regular" color="body" numberOfLines={1}>
             {profile.data?.fullName || 'Cargando perfil…'}
           </AppText>
-        </View>
-        <View style={styles.avatar}>
+        </AppFlex>
+        <AppFlex size={52} align="center" justify="center" style={styles.avatar}>
           <AppText variant="title.m" color="link">
             {initialsFromName(profile.data?.fullName)}
           </AppText>
-        </View>
-      </View>
+        </AppFlex>
+      </AppFlex>
 
-      <View style={styles.intro}>
+      <AppFlex gap="sm">
         <AppText variant="title.xl" color="headings">
           ¿Qué necesitas gestionar?
         </AppText>
         <AppText variant="text.sm.regular" color="details">
           Accede a los módulos habilitados para tu equipo.
         </AppText>
-      </View>
+      </AppFlex>
 
       {HOME_MODULE_GROUPS.map(group => (
-        <View key={group.title} style={styles.group}>
+        <AppFlex key={group.title} gap="sm">
           <AppText variant="overline" color="details">
             {group.title.toUpperCase()}
           </AppText>
-          <View style={styles.grid}>
+          <AppFlex direction="row" flexWrap="wrap" gap="sm">
             {group.modules.map(module => {
               const Icon = module.icon;
               return (
@@ -128,10 +130,9 @@ const HomeScreen = () => {
                 </AppCard>
               );
             })}
-          </View>
-        </View>
+          </AppFlex>
+        </AppFlex>
       ))}
-      <View style={{ height: insets.bottom + 20 }} />
     </ScrollView>
   );
 };
@@ -139,21 +140,12 @@ const HomeScreen = () => {
 const styles = StyleSheet.create(theme => ({
   screen: { flex: 1, backgroundColor: theme.colors.surface.background.primary },
   content: { paddingHorizontal: theme.spacing.md, gap: theme.spacing.xl },
-  userHeader: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md },
-  userCopy: { flex: 1, gap: theme.spacing.xs },
   avatar: {
-    width: 52,
-    height: 52,
-    alignItems: 'center',
-    justifyContent: 'center',
     borderRadius: theme.radius.lg,
     backgroundColor: theme.colors.surface.background.submenu,
     borderWidth: theme.border.hairline,
     borderColor: theme.colors.border.focus,
   },
-  intro: { gap: theme.spacing.sm },
-  group: { gap: theme.spacing.sm },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.sm },
   moduleCard: {
     position: 'relative',
     width: '48.7%',
@@ -172,11 +164,7 @@ const styles = StyleSheet.create(theme => ({
     backgroundColor: theme.colors.navigation.active,
   },
   iconSurface: {
-    width: 42,
-    height: 42,
     borderRadius: theme.radius.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
     backgroundColor: theme.colors.navigation.rail,
   },
   moduleName: { minHeight: 38, flex: 1 },
