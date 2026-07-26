@@ -1,4 +1,5 @@
 // import { AutoSizeText, ResizeTextMode } from 'react-native-auto-size-text';
+import { createTokenVariants } from '@/styles/createTokenVariants';
 import React from 'react';
 import { Text, TextProps, TextStyle } from 'react-native';
 import { StyleSheet, UnistylesVariants } from 'react-native-unistyles';
@@ -89,27 +90,9 @@ const styles = StyleSheet.create(theme => ({
         ['overline']: theme.typography.overline,
         ['menu']: theme.typography.menu,
       },
-      size: {
-        xs: { fontSize: theme.fontSize.xs },
-        sm: { fontSize: theme.fontSize.sm },
-        md: { fontSize: theme.fontSize.md },
-        lg: { fontSize: theme.fontSize.lg },
-        xl: { fontSize: theme.fontSize.xl },
-        xxl: { fontSize: theme.fontSize.xxl },
-        xxxl: { fontSize: theme.fontSize.xxxl },
-      },
+      size: createTokenVariants(theme.fontSize, 'fontSize'),
 
-      color: {
-        headings: { color: theme.colors.text.headings },
-        body: { color: theme.colors.text.body },
-        details: { color: theme.colors.text.details },
-        button: { color: theme.colors.text.button },
-        link: { color: theme.colors.text.link },
-        disabled: { color: theme.colors.text.disabled },
-        success: { color: theme.colors.text.success },
-        error: { color: theme.colors.text.error },
-        warning: { color: theme.colors.text.warning },
-      },
+      color: createTokenVariants(theme.colors.text, 'color'),
     },
   },
 }));

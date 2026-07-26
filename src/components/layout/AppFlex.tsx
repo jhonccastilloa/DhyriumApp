@@ -1,4 +1,5 @@
 import type { SpacingTheme } from '@/styles/theme/tokens';
+import { createTokenVariants } from '@/styles/createTokenVariants';
 import type { StyleProp, ViewProps, ViewStyle } from 'react-native';
 import { View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
@@ -31,31 +32,6 @@ interface AppFlexBaseProps extends Omit<ViewProps, 'style'> {
 export type AppFlexProps =
   | (AppFlexBaseProps & { circle?: false })
   | (AppFlexBaseProps & { circle: true; size: ViewStyle['height'] });
-
-type SpacingStyleProperty =
-  | 'gap'
-  | 'padding'
-  | 'paddingVertical'
-  | 'paddingHorizontal'
-  | 'paddingTop'
-  | 'paddingBottom'
-  | 'paddingLeft'
-  | 'paddingRight';
-
-type SpacingVariant = Partial<Record<SpacingStyleProperty, number>>;
-
-const createSpacingVariants = (
-  spacing: Readonly<Record<SpacingTheme, number>>,
-  property: SpacingStyleProperty,
-): Record<SpacingTheme, SpacingVariant> => {
-  const variants = {} as Record<SpacingTheme, SpacingVariant>;
-
-  (Object.keys(spacing) as SpacingTheme[]).forEach(key => {
-    variants[key] = { [property]: spacing[key] };
-  });
-
-  return variants;
-};
 
 const AppFlex = ({
   children,
@@ -126,14 +102,14 @@ const AppFlex = ({
 const styles = StyleSheet.create(theme => ({
   container: {
     variants: {
-      gap: createSpacingVariants(theme.spacing, 'gap'),
-      p: createSpacingVariants(theme.spacing, 'padding'),
-      pv: createSpacingVariants(theme.spacing, 'paddingVertical'),
-      ph: createSpacingVariants(theme.spacing, 'paddingHorizontal'),
-      pt: createSpacingVariants(theme.spacing, 'paddingTop'),
-      pb: createSpacingVariants(theme.spacing, 'paddingBottom'),
-      pl: createSpacingVariants(theme.spacing, 'paddingLeft'),
-      pr: createSpacingVariants(theme.spacing, 'paddingRight'),
+      gap: createTokenVariants(theme.spacing, 'gap'),
+      p: createTokenVariants(theme.spacing, 'padding'),
+      pv: createTokenVariants(theme.spacing, 'paddingVertical'),
+      ph: createTokenVariants(theme.spacing, 'paddingHorizontal'),
+      pt: createTokenVariants(theme.spacing, 'paddingTop'),
+      pb: createTokenVariants(theme.spacing, 'paddingBottom'),
+      pl: createTokenVariants(theme.spacing, 'paddingLeft'),
+      pr: createTokenVariants(theme.spacing, 'paddingRight'),
     },
   },
   circle: { borderRadius: '50%' },
