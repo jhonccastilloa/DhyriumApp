@@ -1,14 +1,10 @@
 import { Image, Pressable, View } from 'react-native';
 import { PdfView } from 'react-native-pdf-light';
-import {
-  DotsSixVerticalIcon,
-  EyeIcon,
-  TrashIcon,
-} from 'phosphor-react-native';
 import { SortableItem } from 'react-native-reanimated-dnd';
 import type { SortableRenderItemProps } from 'react-native-reanimated-dnd';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import AppStatusBadge from '@/components/feedback/AppStatusBadge';
+import AppIcon from '@/components/icons/AppIcon';
 import AppText from '@/components/typography/AppText';
 import type { ComposerPage } from '../types/documentComposer.types';
 
@@ -43,7 +39,6 @@ const AppDocumentPageCard = ({
             <PdfView
               source={item.uri}
               page={(item.originalPageNumber || 1) - 1}
-              resizeMode="contain"
               style={styles.preview}
             />
           )}
@@ -81,19 +76,27 @@ const AppDocumentPageCard = ({
             onPress={() => onView(item.id)}
             style={styles.iconButton}
           >
-            <EyeIcon size={20} color={theme.colors.icon.secondary} />
+            <AppIcon
+              name="eye"
+              size={20}
+              mColor={theme.colors.icon.secondary}
+            />
           </Pressable>
           <Pressable
             onPress={() => onDelete(item.id)}
             style={styles.iconButton}
           >
-            <TrashIcon size={20} color={theme.colors.text.error} />
+            <AppIcon
+              name="trash"
+              size={20}
+              mColor={theme.colors.text.error}
+            />
           </Pressable>
           <SortableItem.Handle style={styles.handle}>
-            <DotsSixVerticalIcon
+            <AppIcon
+              name="dotsSixVertical"
               size={26}
-              color={theme.colors.navigation.active}
-              weight="bold"
+              mColor={theme.colors.navigation.active}
             />
           </SortableItem.Handle>
         </View>

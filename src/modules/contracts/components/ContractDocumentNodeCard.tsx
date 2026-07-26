@@ -1,11 +1,7 @@
 import { Pressable, View } from 'react-native';
-import {
-  CaretRightIcon,
-  FilePdfIcon,
-  FolderOpenIcon,
-} from 'phosphor-react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import AppStatusBadge from '@/components/feedback/AppStatusBadge';
+import AppIcon from '@/components/icons/AppIcon';
 import AppText from '@/components/typography/AppText';
 import type { ContractTreeNode } from '../types/contracts.types';
 
@@ -40,20 +36,21 @@ const ContractDocumentNodeCard = ({
     >
       <View style={styles.icon}>
         {isGroup ? (
-          <FolderOpenIcon
+          <AppIcon
+            name="folderOpen"
             size={24}
-            color={theme.colors.navigation.active}
-            weight="duotone"
+            mColor={theme.colors.navigation.active}
           />
         ) : (
-          <FilePdfIcon
+          <AppIcon
+            name="filePdf"
             size={24}
-            color={
+            mColor={
               node.status === 'SUBIDO'
                 ? theme.colors.text.success
                 : theme.colors.icon.secondary
             }
-            weight="duotone"
+            variant="featured"
           />
         )}
       </View>
@@ -75,10 +72,10 @@ const ContractDocumentNodeCard = ({
           />
         )}
       </View>
-      <CaretRightIcon
+      <AppIcon
+        name="caretRight"
         size={20}
-        color={theme.colors.icon.secondary}
-        weight="bold"
+        mColor={theme.colors.icon.secondary}
       />
     </Pressable>
   );

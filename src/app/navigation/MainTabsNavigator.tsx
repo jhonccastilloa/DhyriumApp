@@ -4,13 +4,9 @@ import {
   type BottomTabNavigationOptions,
 } from '@react-navigation/bottom-tabs';
 import type { NavigatorScreenParams } from '@react-navigation/native';
-import {
-  DotsThreeOutlineIcon,
-  HouseIcon,
-  ToolboxIcon,
-  type Icon,
-} from 'phosphor-react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
+import AppIcon from '@/components/icons/AppIcon';
+import type { IconName } from '@/components/icons/iconRegistry';
 import HomeNavigator, {
   type HomeNavigatorParamList,
 } from '@/modules/home/navigation/HomeNavigator';
@@ -26,16 +22,21 @@ export type MainTabsNavigatorParamList = {
 const Tab = createBottomTabNavigator<MainTabsNavigatorParamList>();
 
 const TabRailIcon = ({
-  icon: Icon,
+  name,
   focused,
   color,
 }: {
-  icon: Icon;
+  name: IconName;
   focused: boolean;
   color: string;
 }) => (
   <View style={[styles.iconContainer, focused && styles.iconFocused]}>
-    <Icon size={22} color={color} weight={focused ? 'fill' : 'regular'} />
+    <AppIcon
+      name={name}
+      size={22}
+      mColor={color}
+      variant={focused ? 'active' : 'default'}
+    />
     {focused ? <View style={styles.activeRail} /> : null}
   </View>
 );
@@ -66,7 +67,7 @@ const MainTabsNavigator = () => {
         options={{
           title: 'Inicio',
           tabBarIcon: props => (
-            <TabRailIcon icon={HouseIcon} {...props} />
+            <TabRailIcon name="home" {...props} />
           ),
         }}
       />
@@ -76,7 +77,7 @@ const MainTabsNavigator = () => {
         options={{
           title: 'Herramientas',
           tabBarIcon: props => (
-            <TabRailIcon icon={ToolboxIcon} {...props} />
+            <TabRailIcon name="toolbox" {...props} />
           ),
         }}
       />
@@ -86,7 +87,7 @@ const MainTabsNavigator = () => {
         options={{
           title: 'Más',
           tabBarIcon: props => (
-            <TabRailIcon icon={DotsThreeOutlineIcon} {...props} />
+            <TabRailIcon name="dotsThreeOutline" {...props} />
           ),
         }}
       />

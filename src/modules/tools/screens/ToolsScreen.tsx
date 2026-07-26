@@ -1,16 +1,11 @@
 import { useEffect } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import {
-  CaretRightIcon,
-  FilesIcon,
-  FilePdfIcon,
-  ScanIcon,
-} from 'phosphor-react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppHeader from '@/components/navigation/AppHeader';
 import AppCard from '@/components/layout/AppCard';
+import AppIcon from '@/components/icons/AppIcon';
 import AppText from '@/components/typography/AppText';
 import type { MainAppNavigatorNavigationProp } from '@/app/navigation/MainAppNavigator';
 import { useDocumentComposerStore } from '@/modules/document-composer/state/useDocumentComposerStore';
@@ -54,10 +49,10 @@ const ToolsScreen = () => {
           style={styles.toolCard}
         >
           <View style={styles.iconSurface}>
-            <ScanIcon
+            <AppIcon
+              name="scan"
               size={27}
-              color={theme.colors.navigation.active}
-              weight="duotone"
+              mColor={theme.colors.navigation.active}
             />
           </View>
           <View style={styles.toolCopy}>
@@ -68,18 +63,19 @@ const ToolsScreen = () => {
               Captura, ordena y genera un PDF.
             </AppText>
           </View>
-          <CaretRightIcon
+          <AppIcon
+            name="caretRight"
             size={20}
-            color={theme.colors.navigation.active}
-            weight="bold"
+            mColor={theme.colors.navigation.active}
           />
         </AppCard>
         <AppCard onPress={() => openComposer('pdf')} style={styles.toolCard}>
           <View style={styles.iconSurface}>
-            <FilePdfIcon
+            <AppIcon
+              name="filePdf"
               size={27}
-              color={theme.colors.icon.secondary}
-              weight="duotone"
+              mColor={theme.colors.icon.secondary}
+              variant="featured"
             />
           </View>
           <View style={styles.toolCopy}>
@@ -90,7 +86,11 @@ const ToolsScreen = () => {
               Reordena, elimina o agrega páginas.
             </AppText>
           </View>
-          <CaretRightIcon size={20} color={theme.colors.icon.secondary} />
+          <AppIcon
+            name="caretRight"
+            size={20}
+            mColor={theme.colors.icon.secondary}
+          />
         </AppCard>
 
         {drafts.length > 0 ? (
@@ -105,7 +105,11 @@ const ToolsScreen = () => {
                 pressed && styles.pressed,
               ]}
             >
-              <FilesIcon size={22} color={theme.colors.icon.secondary} />
+              <AppIcon
+                name="files"
+                size={22}
+                mColor={theme.colors.icon.secondary}
+              />
               <AppText
                 variant="text.md.bold"
                 color="body"

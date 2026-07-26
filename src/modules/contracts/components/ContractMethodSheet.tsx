@@ -4,15 +4,11 @@ import {
   BottomSheetModal,
   BottomSheetScrollView,
 } from '@gorhom/bottom-sheet';
-import {
-  FilePdfIcon,
-  PencilSimpleIcon,
-  ScanIcon,
-  TrashIcon,
-} from 'phosphor-react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import AppBottomSheetModal from '@/components/bottom-sheets/AppBottomSheetModal';
+import AppIcon from '@/components/icons/AppIcon';
 import AppText from '@/components/typography/AppText';
+import type { IconName } from '@/components/icons/iconRegistry';
 import type { ContractTreeNode } from '../types/contracts.types';
 
 type ContractMethodSheetProps = {
@@ -41,10 +37,9 @@ const ContractMethodSheet = ({
   const action = (
     title: string,
     description: string,
-    icon: typeof FilePdfIcon,
+    icon: IconName,
     onPress: () => void
   ) => {
-    const Icon = icon;
     return (
       <Pressable
         onPress={() => {
@@ -57,10 +52,11 @@ const ContractMethodSheet = ({
         ]}
       >
         <View style={styles.icon}>
-          <Icon
+          <AppIcon
+            name={icon}
             size={25}
-            color={theme.colors.navigation.active}
-            weight="duotone"
+            mColor={theme.colors.navigation.active}
+            variant="featured"
           />
         </View>
         <View style={styles.actionCopy}>
@@ -101,7 +97,7 @@ const ContractMethodSheet = ({
           ? action(
               'Ver PDF actual',
               'Abre el archivo publicado en este nivel.',
-              FilePdfIcon,
+              'filePdf',
               onView
             )
           : null}
@@ -109,27 +105,27 @@ const ContractMethodSheet = ({
           ? action(
               'Organizar o reemplazar',
               'Crea primero una nueva versión sin alterar la actual.',
-              PencilSimpleIcon,
+              'pencilSimple',
               onOrganize
             )
           : null}
         {action(
           uploaded ? 'Elegir un nuevo PDF' : 'Elegir un PDF',
           'Selecciona un archivo guardado en el dispositivo.',
-          FilePdfIcon,
+          'filePdf',
           onChoosePdf
         )}
         {action(
           uploaded ? 'Escanear nueva versión' : 'Escanear con el celular',
           'Captura páginas con recorte y perspectiva automáticos.',
-          ScanIcon,
+          'scan',
           onScan
         )}
         {uploaded
           ? action(
               'Quitar PDF del nivel',
               'Conserva el historial, pero deja este nivel pendiente.',
-              TrashIcon,
+              'trash',
               onDelete
             )
           : null}

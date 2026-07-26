@@ -1,14 +1,16 @@
 import { IconSizeTheme } from '@/styles/theme/tokens';
-import iconRegistry, { IconName } from './iconRegistry';
+import iconRegistry from './iconRegistry';
+import type { IconName, IconVariant } from './iconRegistry';
 import { TouchableOpacity } from 'react-native';
 import { useUnistyles } from 'react-native-unistyles';
 import { IconColorTheme } from '@/styles/theme/semanticColors';
 
 interface AppIconProps {
   name: IconName;
-  size?: IconSizeTheme;
+  size?: IconSizeTheme | number;
   color?: IconColorTheme;
   mColor?: string;
+  variant?: IconVariant;
   onPress?: () => void;
 }
 
@@ -17,6 +19,7 @@ const AppIcon = ({
   size = 'md',
   color = 'primary',
   mColor,
+  variant = 'default',
   onPress,
 }: AppIconProps) => {
   const { theme } = useUnistyles();
@@ -30,12 +33,14 @@ const AppIcon = ({
         {IconComponent({
           size: typeof size === 'number' ? size : theme.icon.size[size],
           color: mColor || theme.colors.icon[color],
+          variant,
         })}
       </TouchableOpacity>
     );
   return IconComponent({
     size: typeof size === 'number' ? size : theme.icon.size[size],
     color: mColor || theme.colors.icon[color],
+    variant,
   });
 };
 

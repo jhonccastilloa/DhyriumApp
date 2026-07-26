@@ -4,9 +4,9 @@ import {
   BottomSheetModal,
   BottomSheetScrollView,
 } from '@gorhom/bottom-sheet';
-import { BuildingsIcon, CheckCircleIcon } from 'phosphor-react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import AppBottomSheetModal from '@/components/bottom-sheets/AppBottomSheetModal';
+import AppIcon from '@/components/icons/AppIcon';
 import AppSearchInput from '@/components/inputs/AppSearchInput';
 import AppText from '@/components/typography/AppText';
 import type { ContractScope } from '../types/contracts.types';
@@ -79,9 +79,10 @@ const CompanyScopeSheet = ({
               ]}
             >
               <View style={styles.icon}>
-                <BuildingsIcon
+                <AppIcon
+                  name="buildings"
                   size={22}
-                  color={
+                  mColor={
                     isSelected
                       ? theme.colors.navigation.active
                       : theme.colors.icon.secondary
@@ -99,10 +100,11 @@ const CompanyScopeSheet = ({
                 </AppText>
               </View>
               {isSelected ? (
-                <CheckCircleIcon
+                <AppIcon
+                  name="checkCircle"
                   size={22}
-                  color={theme.colors.navigation.active}
-                  weight="fill"
+                  mColor={theme.colors.navigation.active}
+                  variant="active"
                 />
               ) : null}
             </Pressable>

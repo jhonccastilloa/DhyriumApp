@@ -2,19 +2,13 @@ import { useCallback, useEffect, useRef } from 'react';
 import { View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AxiosError } from 'axios';
-import {
-  CheckCircleIcon,
-  CircleNotchIcon,
-  CloudArrowUpIcon,
-  FilePdfIcon,
-  LinkSimpleIcon,
-  WarningCircleIcon,
-} from 'phosphor-react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { AppButton } from '@/components/buttons/AppButton';
 import AppHeader from '@/components/navigation/AppHeader';
+import AppIcon from '@/components/icons/AppIcon';
 import AppProgressBar from '@/components/feedback/AppProgressBar';
 import AppText from '@/components/typography/AppText';
+import type { IconName } from '@/components/icons/iconRegistry';
 import type { MainAppNavigatorParamList } from '@/app/navigation/MainAppNavigator';
 import ContractsService from '@/modules/contracts/services/ContractsService';
 import DocumentComposerService from '../services/DocumentComposerService';
@@ -119,20 +113,26 @@ const ComposerProcessScreen = ({ navigation }: Props) => {
     session.status === 'generationError' ||
     session.status === 'associationError';
 
-  const stages = [
+  const stages: {
+    key: string;
+    label: string;
+    complete: boolean;
+    active: boolean;
+    icon: IconName;
+  }[] = [
     {
       key: 'transfer',
       label: 'Transferir archivos',
       complete: !['transferring', 'generationError'].includes(session.status),
       active: session.status === 'transferring',
-      icon: CloudArrowUpIcon,
+      icon: 'cloudArrowUp',
     },
     {
       key: 'generate',
       label: 'Generar y validar PDF',
       complete: Boolean(session.artifact),
       active: session.status === 'processing',
-      icon: FilePdfIcon,
+      icon: 'filePdf',
     },
     ...(session.mode === 'contract'
       ? [
@@ -141,7 +141,7 @@ const ComposerProcessScreen = ({ navigation }: Props) => {
             label: 'Asociar al contrato',
             complete: session.status === 'uploaded',
             active: session.status === 'associating',
-            icon: LinkSimpleIcon,
+            icon: 'linkSimple' as IconName,
           },
         ]
       : []),
@@ -157,16 +157,16 @@ const ComposerProcessScreen = ({ navigation }: Props) => {
       <View style={styles.content}>
         <View style={styles.hero}>
           {failed ? (
-            <WarningCircleIcon
+            <AppIcon
+              name="warningCircle"
               size={58}
-              color={theme.colors.text.error}
-              weight="duotone"
+              mColor={theme.colors.text.error}
             />
           ) : (
-            <CircleNotchIcon
+            <AppIcon
+              name="circleNotch"
               size={58}
-              color={theme.colors.navigation.active}
-              weight="duotone"
+              mColor={theme.colors.navigation.active}
             />
           )}
           <AppText variant="title.xl" color={failed ? 'error' : 'headings'} align="center">
@@ -199,20 +199,21 @@ const ComposerProcessScreen = ({ navigation }: Props) => {
 
         <View style={styles.stages}>
           {stages.map(stage => {
-            const Icon = stage.icon;
             return (
               <View key={stage.key} style={styles.stage}>
                 <View style={styles.stageIcon}>
                   {stage.complete ? (
-                    <CheckCircleIcon
+                    <AppIcon
+                      name="checkCircle"
                       size={24}
-                      color={theme.colors.text.success}
-                      weight="fill"
+                      mColor={theme.colors.text.success}
+                      variant="active"
                     />
                   ) : (
-                    <Icon
+                    <AppIcon
+                      name={stage.icon}
                       size={24}
-                      color={
+                      mColor={
                         stage.active
                           ? theme.colors.navigation.active
                           : theme.colors.icon.disabled

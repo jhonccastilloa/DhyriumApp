@@ -12,11 +12,11 @@ import {
   BottomSheetScrollView,
   type BottomSheetFooterProps,
 } from '@gorhom/bottom-sheet';
-import { CheckIcon } from 'phosphor-react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import AppBottomSheetModal from '@/components/bottom-sheets/AppBottomSheetModal';
 import { AppButton } from '@/components/buttons/AppButton';
 import AppFilterChip from '@/components/filters/AppFilterChip';
+import AppIcon from '@/components/icons/AppIcon';
 import AppText from '@/components/typography/AppText';
 import { useContractCountQuery } from '../queries/contractQueries';
 import {
@@ -220,10 +220,10 @@ const ContractFiltersSheet = ({
                   {option.label}
                 </AppText>
                 {selected ? (
-                  <CheckIcon
+                  <AppIcon
+                    name="check"
                     size={20}
-                    color={theme.colors.navigation.active}
-                    weight="bold"
+                    mColor={theme.colors.navigation.active}
                   />
                 ) : null}
               </Pressable>

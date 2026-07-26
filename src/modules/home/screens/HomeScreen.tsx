@@ -1,13 +1,13 @@
 import { ScrollView, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { CaretRightIcon } from 'phosphor-react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import dayjs from '@/utils/dayjsSpanish';
 import AppText from '@/components/typography/AppText';
 import AppCard from '@/components/layout/AppCard';
 import AppFlex from '@/components/layout/AppFlex';
+import AppIcon from '@/components/icons/AppIcon';
 import { useProfileQuery } from '@/modules/profile/queries/useProfileQuery';
 import { HOME_MODULE_GROUPS } from '../constants/homeModules';
 import type { HomeNavigatorParamList } from '../navigation/HomeNavigator';
@@ -78,7 +78,6 @@ const HomeScreen = () => {
           </AppText>
           <AppFlex direction="row" flexWrap="wrap" gap="sm">
             {group.modules.map(module => {
-              const Icon = module.icon;
               return (
                 <AppCard
                   key={module.key}
@@ -96,14 +95,15 @@ const HomeScreen = () => {
                 >
                   {module.enabled ? <View style={styles.activeRail} /> : null}
                   <View style={styles.iconSurface}>
-                    <Icon
+                    <AppIcon
+                      name={module.icon}
                       size={24}
-                      color={
+                      mColor={
                         module.enabled
                           ? theme.colors.navigation.active
                           : theme.colors.navigation.inactive
                       }
-                      weight={module.enabled ? 'duotone' : 'regular'}
+                      variant={module.enabled ? 'featured' : 'default'}
                     />
                   </View>
                   <AppText
@@ -115,10 +115,10 @@ const HomeScreen = () => {
                     {module.name}
                   </AppText>
                   {module.enabled ? (
-                    <CaretRightIcon
+                    <AppIcon
+                      name="caretRight"
                       size={17}
-                      color={theme.colors.navigation.active}
-                      weight="bold"
+                      mColor={theme.colors.navigation.active}
                     />
                   ) : (
                     <AppText variant="text.xs.bold" color="details" numberOfLines={1}>

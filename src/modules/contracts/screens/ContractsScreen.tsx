@@ -9,18 +9,12 @@ import { FlatList, Pressable, RefreshControl, View } from 'react-native';
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import {
-  BuildingsIcon,
-  CaretDownIcon,
-  CaretRightIcon,
-  FunnelIcon,
-  SortAscendingIcon,
-} from 'phosphor-react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { toast } from 'sonner-native';
 import AppHeader from '@/components/navigation/AppHeader';
 import AppSearchInput from '@/components/inputs/AppSearchInput';
 import AppCard from '@/components/layout/AppCard';
+import AppIcon from '@/components/icons/AppIcon';
 import AppStatusBadge, {
   type AppStatusTone,
 } from '@/components/feedback/AppStatusBadge';
@@ -143,10 +137,10 @@ const ContractsScreen = () => {
               {item.projectShortName || item.name}
             </AppText>
           </View>
-          <CaretRightIcon
+          <AppIcon
+            name="caretRight"
             size={20}
-            color={theme.colors.icon.secondary}
-            weight="bold"
+            mColor={theme.colors.icon.secondary}
           />
         </View>
         <AppText variant="text.sm.regular" color="body" numberOfLines={2}>
@@ -201,14 +195,15 @@ const ContractsScreen = () => {
               pressed && styles.pressed,
             ]}
           >
-            <BuildingsIcon
+            <AppIcon
+              name="buildings"
               size={19}
-              color={theme.colors.navigation.active}
+              mColor={theme.colors.navigation.active}
             />
-            <CaretDownIcon
+            <AppIcon
+              name="caretDown"
               size={14}
-              color={theme.colors.navigation.active}
-              weight="bold"
+              mColor={theme.colors.navigation.active}
             />
           </Pressable>
         }
@@ -243,9 +238,10 @@ const ContractsScreen = () => {
                   {scope?.name || 'Selecciona un contexto'}
                 </AppText>
               </View>
-              <CaretDownIcon
+              <AppIcon
+                name="caretDown"
                 size={18}
-                color={theme.colors.icon.secondary}
+                mColor={theme.colors.icon.secondary}
               />
             </Pressable>
             <AppSearchInput
@@ -262,10 +258,11 @@ const ContractsScreen = () => {
                   pressed && styles.pressed,
                 ]}
               >
-                <FunnelIcon
+                <AppIcon
+                  name="funnel"
                   size={19}
-                  color={theme.colors.icon.secondary}
-                  weight={activeFilters > 0 ? 'fill' : 'regular'}
+                  mColor={theme.colors.icon.secondary}
+                  variant={activeFilters > 0 ? 'active' : 'default'}
                 />
                 <AppText variant="text.sm.bold" color="body">
                   Filtros
@@ -279,9 +276,10 @@ const ContractsScreen = () => {
                 ) : null}
               </Pressable>
               <View style={styles.control}>
-                <SortAscendingIcon
+                <AppIcon
+                  name="sortAscending"
                   size={19}
-                  color={theme.colors.icon.secondary}
+                  mColor={theme.colors.icon.secondary}
                 />
                 <AppText variant="text.sm.bold" color="body">
                   Recientes

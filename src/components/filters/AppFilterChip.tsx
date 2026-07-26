@@ -1,10 +1,10 @@
 import { Pressable } from 'react-native';
-import { XIcon } from 'phosphor-react-native';
 import {
   StyleSheet,
   UnistylesVariants,
   useUnistyles,
 } from 'react-native-unistyles';
+import AppIcon from '@/components/icons/AppIcon';
 import AppText from '@/components/typography/AppText';
 
 type AppFilterChipVariants = UnistylesVariants<typeof styles>;
@@ -36,14 +36,14 @@ const AppFilterChip = ({
         {label}
       </AppText>
       {removable ? (
-        <XIcon
+        <AppIcon
+          name="close"
           size={14}
-          color={
+          mColor={
             selected
               ? theme.colors.navigation.active
               : theme.colors.icon.secondary
           }
-          weight="bold"
         />
       ) : null}
     </Pressable>

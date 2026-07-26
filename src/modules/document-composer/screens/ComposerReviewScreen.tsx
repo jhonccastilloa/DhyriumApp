@@ -11,10 +11,6 @@ import {
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import {
-  ArrowClockwiseIcon,
-  PlusIcon,
-} from 'phosphor-react-native';
-import {
   Sortable,
   type SortableRenderItemProps,
 } from 'react-native-reanimated-dnd';
@@ -22,6 +18,7 @@ import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { toast } from 'sonner-native';
 import AppHeader from '@/components/navigation/AppHeader';
 import { AppButton } from '@/components/buttons/AppButton';
+import AppIcon from '@/components/icons/AppIcon';
 import AppText from '@/components/typography/AppText';
 import type { MainAppNavigatorParamList } from '@/app/navigation/MainAppNavigator';
 import ContractsService from '@/modules/contracts/services/ContractsService';
@@ -283,7 +280,11 @@ const ComposerReviewScreen = ({ route, navigation }: Props) => {
             onPress={() => void startScanner(true)}
             style={styles.secondaryButton}
           >
-            <PlusIcon size={19} color={theme.colors.navigation.active} />
+            <AppIcon
+              name="plus"
+              size={19}
+              mColor={theme.colors.navigation.active}
+            />
             <AppText variant="text.sm.bold" color="link">
               Agregar páginas
             </AppText>
@@ -292,9 +293,10 @@ const ComposerReviewScreen = ({ route, navigation }: Props) => {
             onPress={repeatAll}
             style={styles.secondaryButton}
           >
-            <ArrowClockwiseIcon
+            <AppIcon
+              name="arrowClockwise"
               size={19}
-              color={theme.colors.icon.secondary}
+              mColor={theme.colors.icon.secondary}
             />
             <AppText variant="text.sm.bold" color="body">
               Repetir todo

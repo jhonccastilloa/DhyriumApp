@@ -84,6 +84,7 @@ API DTO (types) -> service -> mapper -> entidad de dominio (entities) -> UI/stat
 
 - Usa Unistyles y los tokens de `src/styles/theme`. Prefiere colores semánticos (`theme.colors.*`), espaciado (`theme.spacing.*`), tipografía y radios del tema antes que valores literales.
 - `AppText`, `AppFlex`, `AppButton`, `AppTextInput`, `AppIcon`, bottom sheets y `ScreenContainer` son las abstracciones compartidas preferidas. Extiéndelas antes de duplicar estilos o comportamiento de React Native.
+- Los iconos deben renderizarse mediante `AppIcon`; las pantallas, navegadores y componentes no deben importar directamente una librería concreta de iconos. `iconRegistry.tsx` es la única capa autorizada para conocer y adaptar esa librería: agrega allí los iconos nuevos y expón sus nombres mediante `IconName`. Usa variantes semánticas de la aplicación (`default`, `active`, `muted` y `featured`) en lugar de pesos específicos de la librería; conserva en el registro los pesos fijos de iconos existentes. El layout que rodea al icono, como fondos, rails o contenedores, permanece en el componente consumidor.
 - Usa el prefijo `App` para componentes visuales compartidos y `App[Especialidad]Input` para controles derivados de `AppTextInput`.
 - Usa el prefijo `Form` únicamente para controles conectados a React Hook Form. Los `Form*Input` delegan en `FormField`; no dupliques la integración con `Controller` en cada pantalla.
 - Los componentes estructurales terminan en `Container`. Los componentes de dominio se nombran por entidad y representación, sin prefijo `App`.

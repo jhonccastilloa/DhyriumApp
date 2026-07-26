@@ -1,16 +1,10 @@
 import { Alert, Pressable, ScrollView, View } from 'react-native';
-import {
-  CheckIcon,
-  DesktopIcon,
-  MoonIcon,
-  SignOutIcon,
-  SunIcon,
-} from 'phosphor-react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppHeader from '@/components/navigation/AppHeader';
 import AppText from '@/components/typography/AppText';
 import AppCard from '@/components/layout/AppCard';
+import AppIcon from '@/components/icons/AppIcon';
 import { useProfileQuery } from '@/modules/profile/queries/useProfileQuery';
 import { useAuthStore } from '@/modules/auth/state/useAuthStore';
 import {
@@ -19,9 +13,9 @@ import {
 } from '@/styles/themePreference';
 
 const THEME_OPTIONS = [
-  { value: 'light' as const, label: 'Claro', icon: SunIcon },
-  { value: 'dark' as const, label: 'Oscuro', icon: MoonIcon },
-  { value: 'system' as const, label: 'Sistema', icon: DesktopIcon },
+  { value: 'light' as const, label: 'Claro', icon: 'sun' as const },
+  { value: 'dark' as const, label: 'Oscuro', icon: 'moon' as const },
+  { value: 'system' as const, label: 'Sistema', icon: 'desktop' as const },
 ];
 
 const MoreScreen = () => {
@@ -85,7 +79,6 @@ const MoreScreen = () => {
           </AppText>
           <AppCard>
             {THEME_OPTIONS.map((option, index) => {
-              const Icon = option.icon;
               const selected = preference === option.value;
               return (
                 <Pressable
@@ -99,9 +92,10 @@ const MoreScreen = () => {
                     pressed && styles.pressed,
                   ]}
                 >
-                  <Icon
+                  <AppIcon
+                    name={option.icon}
                     size={22}
-                    color={
+                    mColor={
                       selected
                         ? theme.colors.navigation.active
                         : theme.colors.icon.secondary
@@ -115,10 +109,10 @@ const MoreScreen = () => {
                     {option.label}
                   </AppText>
                   {selected ? (
-                    <CheckIcon
+                    <AppIcon
+                      name="check"
                       size={20}
-                      color={theme.colors.navigation.active}
-                      weight="bold"
+                      mColor={theme.colors.navigation.active}
                     />
                   ) : null}
                 </Pressable>
@@ -134,7 +128,11 @@ const MoreScreen = () => {
             pressed && styles.pressed,
           ]}
         >
-          <SignOutIcon size={22} color={theme.colors.text.error} />
+          <AppIcon
+            name="signOut"
+            size={22}
+            mColor={theme.colors.text.error}
+          />
           <AppText variant="text.md.bold" color="error">
             Cerrar sesión
           </AppText>

@@ -1,8 +1,8 @@
 import { Alert, FlatList, Pressable, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { CaretRightIcon, TrashIcon } from 'phosphor-react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import AppHeader from '@/components/navigation/AppHeader';
+import AppIcon from '@/components/icons/AppIcon';
 import AppText from '@/components/typography/AppText';
 import type { MainAppNavigatorParamList } from '@/app/navigation/MainAppNavigator';
 import { useDocumentComposerStore } from '../state/useDocumentComposerStore';
@@ -69,11 +69,16 @@ const ComposerDraftsScreen = ({ navigation }: Props) => {
               onPress={() => confirmRemove(item)}
               style={styles.delete}
             >
-              <TrashIcon size={20} color={theme.colors.text.error} />
+              <AppIcon
+                name="trash"
+                size={20}
+                mColor={theme.colors.text.error}
+              />
             </Pressable>
-            <CaretRightIcon
+            <AppIcon
+              name="caretRight"
               size={20}
-              color={theme.colors.icon.secondary}
+              mColor={theme.colors.icon.secondary}
             />
           </Pressable>
         )}

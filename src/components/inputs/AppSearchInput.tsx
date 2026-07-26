@@ -1,8 +1,8 @@
 import type { TextInputProps } from 'react-native';
 import { TextInput, View } from 'react-native';
-import { MagnifyingGlassIcon, XIcon } from 'phosphor-react-native';
 import { Pressable } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
+import AppIcon from '@/components/icons/AppIcon';
 
 type AppSearchInputProps = TextInputProps & {
   onClear?: () => void;
@@ -16,9 +16,10 @@ const AppSearchInput = ({
   const { theme } = useUnistyles();
   return (
     <View style={styles.container}>
-      <MagnifyingGlassIcon
+      <AppIcon
+        name="search"
         size={20}
-        color={theme.colors.icon.secondary}
+        mColor={theme.colors.icon.secondary}
       />
       <TextInput
         {...props}
@@ -31,7 +32,11 @@ const AppSearchInput = ({
           onPress={onClear}
           hitSlop={10}
         >
-          <XIcon size={18} color={theme.colors.icon.secondary} />
+          <AppIcon
+            name="closeLight"
+            size={18}
+            mColor={theme.colors.icon.secondary}
+          />
         </Pressable>
       ) : null}
     </View>

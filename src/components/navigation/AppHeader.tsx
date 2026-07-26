@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { ArrowLeftIcon } from 'phosphor-react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import AppIcon from '@/components/icons/AppIcon';
 import AppText from '@/components/typography/AppText';
 
 type AppHeaderProps = {
@@ -45,10 +45,10 @@ const AppHeader = ({
               pressed && styles.pressed,
             ]}
           >
-            <ArrowLeftIcon
+            <AppIcon
+              name="arrowLeft"
               size={22}
-              color={theme.colors.icon.primary}
-              weight="bold"
+              mColor={theme.colors.icon.primary}
             />
           </Pressable>
         ) : null}

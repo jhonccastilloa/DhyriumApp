@@ -2,15 +2,11 @@ import { useState } from 'react';
 import { View } from 'react-native';
 import Share from 'react-native-share';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import {
-  CheckCircleIcon,
-  FilePdfIcon,
-  ShareNetworkIcon,
-} from 'phosphor-react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { toast } from 'sonner-native';
 import { AppButton } from '@/components/buttons/AppButton';
 import AppHeader from '@/components/navigation/AppHeader';
+import AppIcon from '@/components/icons/AppIcon';
 import AppText from '@/components/typography/AppText';
 import type { MainAppNavigatorParamList } from '@/app/navigation/MainAppNavigator';
 import DocumentComposerService from '../services/DocumentComposerService';
@@ -71,10 +67,11 @@ const ComposerResultScreen = ({ navigation }: Props) => {
       <AppHeader title="Documento listo" eyebrow="Resultado" />
       <View style={styles.content}>
         <View style={styles.hero}>
-          <CheckCircleIcon
+          <AppIcon
+            name="checkCircle"
             size={66}
-            color={theme.colors.text.success}
-            weight="duotone"
+            mColor={theme.colors.text.success}
+            variant="featured"
           />
           <AppText variant="title.xl" color="headings" align="center">
             {session.mode === 'contract'
@@ -90,10 +87,11 @@ const ComposerResultScreen = ({ navigation }: Props) => {
 
         <View style={styles.fileCard}>
           <View style={styles.fileIcon}>
-            <FilePdfIcon
+            <AppIcon
+              name="filePdf"
               size={30}
-              color={theme.colors.navigation.active}
-              weight="duotone"
+              mColor={theme.colors.navigation.active}
+              variant="featured"
             />
           </View>
           <View style={styles.fileCopy}>
@@ -124,9 +122,10 @@ const ComposerResultScreen = ({ navigation }: Props) => {
           }
         >
           <View style={styles.shareContent}>
-            <ShareNetworkIcon
+            <AppIcon
+              name="shareNetwork"
               size={20}
-              color={theme.colors.text.button}
+              mColor={theme.colors.text.button}
             />
             <AppText variant="button" color="button">
               Guardar o compartir
