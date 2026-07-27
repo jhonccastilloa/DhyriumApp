@@ -94,7 +94,12 @@ const HomeScreen = () => {
                   ]}
                 >
                   {module.enabled ? <View style={styles.activeRail} /> : null}
-                  <View style={styles.iconSurface}>
+                  <AppFlex
+                    size={42}
+                    align="center"
+                    justify="center"
+                    style={styles.iconSurface}
+                  >
                     <AppIcon
                       name={module.icon}
                       size={24}
@@ -105,7 +110,7 @@ const HomeScreen = () => {
                       }
                       variant={module.enabled ? 'featured' : 'default'}
                     />
-                  </View>
+                  </AppFlex>
                   <AppText
                     variant="text.sm.bold"
                     color={module.enabled ? 'headings' : 'details'}
