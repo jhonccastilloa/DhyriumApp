@@ -8,11 +8,10 @@ import {
 } from '@/infrastructure/storage/fileSystemUtils';
 import {
   appendPages,
-  type PagePlacement,
+  movePageWithinRangeByIds,
   movePageToPosition,
   normalizePageOrder,
   removePage,
-  replacePageRangeByIds,
 } from '../domain/pageOrder';
 import type {
   ComposerDestination,
@@ -58,12 +57,12 @@ type ComposerStore = {
   }) => void;
   addScannedPaths: (paths: string[]) => Promise<void>;
   replaceWithScannedPaths: (paths: string[]) => Promise<void>;
-  applyNearbyOrder: (orderedPageIds: string[]) => void;
-  moveToPosition: (
+  applyLocalPageMove: (
+    localPageIds: string[],
     pageId: string,
-    targetPosition: number,
-    placement: PagePlacement
+    targetPageId: string
   ) => void;
+  moveToPosition: (pageId: string, targetPosition: number) => void;
   deletePage: (pageId: string) => Promise<void>;
   markLegible: (pageId: string) => void;
   setName: (name: string) => void;
@@ -192,28 +191,28 @@ export const useDocumentComposerStore = create<ComposerStore>((set, get) => ({
     updateSessionPages(set, get, normalizePageOrder(added));
   },
 
-  applyNearbyOrder: orderedPageIds => {
+  applyLocalPageMove: (localPageIds, pageId, targetPageId) => {
     const session = get().session;
     if (!session) return;
     updateSessionPages(
       set,
       get,
-      replacePageRangeByIds(session.pages, orderedPageIds)
+      movePageWithinRangeByIds(
+        session.pages,
+        localPageIds,
+        pageId,
+        targetPageId
+      )
     );
   },
 
-  moveToPosition: (pageId, targetPosition, placement) => {
+  moveToPosition: (pageId, targetPosition) => {
     const session = get().session;
     if (!session) return;
     updateSessionPages(
       set,
       get,
-      movePageToPosition(
-        session.pages,
-        pageId,
-        targetPosition,
-        placement
-      )
+      movePageToPosition(session.pages, pageId, targetPosition)
     );
   },
 

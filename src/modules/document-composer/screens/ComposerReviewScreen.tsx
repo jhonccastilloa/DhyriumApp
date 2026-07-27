@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import Animated from 'react-native-reanimated';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { toast } from 'sonner-native';
 import AppHeader from '@/components/navigation/AppHeader';
@@ -25,14 +26,17 @@ import type { MainAppNavigatorParamList } from '@/app/navigation/MainAppNavigato
 import { asFileUri } from '@/infrastructure/storage/fileSystemUtils';
 import ContractsService from '@/modules/contracts/services/ContractsService';
 import ComposerPageOrderSheet from '../components/ComposerPageOrderSheet';
-import DocumentPageListItem from '../components/DocumentPageListItem';
+import LocalDraggablePageListItem from '../components/LocalDraggablePageListItem';
+import LocalPageDragLayer from '../components/LocalPageDragLayer';
 import {
   DOCUMENT_PAGE_CARD_GAP,
   DOCUMENT_PAGE_CARD_HEIGHT,
+  DOCUMENT_PAGE_ITEM_EXTENT,
 } from '../constants/documentComposerLayout';
 import DocumentComposerService from '../services/DocumentComposerService';
 import { pickPdfDocument } from '../services/documentPickerService';
 import { scanDocuments } from '../services/scannerService';
+import { useLocalPageDrag } from '../hooks/useLocalPageDrag';
 import { useDocumentComposerStore } from '../state/useDocumentComposerStore';
 import type { ComposerArtifact, ComposerPage } from '../types/documentComposer.types';
 
@@ -41,8 +45,7 @@ type Props = NativeStackScreenProps<
   'ComposerReview'
 >;
 
-const PAGE_ITEM_EXTENT =
-  DOCUMENT_PAGE_CARD_HEIGHT + DOCUMENT_PAGE_CARD_GAP;
+const EMPTY_PAGES: ComposerPage[] = [];
 const PageSeparator = () => <View style={styles.pageSeparator} />;
 
 const ComposerReviewScreen = ({ route, navigation }: Props) => {
@@ -59,8 +62,8 @@ const ComposerReviewScreen = ({ route, navigation }: Props) => {
   const replaceWithScannedPaths = useDocumentComposerStore(
     state => state.replaceWithScannedPaths
   );
-  const applyNearbyOrder = useDocumentComposerStore(
-    state => state.applyNearbyOrder
+  const applyLocalPageMove = useDocumentComposerStore(
+    state => state.applyLocalPageMove
   );
   const moveToPosition = useDocumentComposerStore(
     state => state.moveToPosition
@@ -71,6 +74,16 @@ const ComposerReviewScreen = ({ route, navigation }: Props) => {
   const saveDraft = useDocumentComposerStore(state => state.saveDraft);
   const loadDraft = useDocumentComposerStore(state => state.loadDraft);
   const clearSession = useDocumentComposerStore(state => state.clearSession);
+
+  const requestMoveToPosition = useCallback((pageId: string) => {
+    setOrderPageId(pageId);
+  }, []);
+  const localDrag = useLocalPageDrag({
+    pages: session?.pages ?? EMPTY_PAGES,
+    contentPadding: theme.spacing.md,
+    onCommit: applyLocalPageMove,
+    onRequestMoveToPosition: requestMoveToPosition,
+  });
 
   const choosePdf = useCallback(async () => {
     const selected = await pickPdfDocument();
@@ -206,10 +219,6 @@ const ComposerReviewScreen = ({ route, navigation }: Props) => {
     [navigation]
   );
 
-  const openOrderSheet = useCallback((pageId: string) => {
-    setOrderPageId(pageId);
-  }, []);
-
   useEffect(() => {
     if (orderPageId) orderSheetRef.current?.present();
   }, [orderPageId]);
@@ -230,21 +239,57 @@ const ComposerReviewScreen = ({ route, navigation }: Props) => {
   };
 
   const renderPage: ListRenderItem<ComposerPage> = useCallback(
-    ({ item }) => (
-      <DocumentPageListItem
-        page={item}
-        artifactId={session?.sourceArtifact?.id}
-        onView={viewPage}
-        onDelete={confirmDelete}
-        onOrder={openOrderSheet}
-      />
-    ),
+    ({ item, index }) => {
+      const activeDrag = localDrag.dragSession;
+      const isPlaceholder = activeDrag?.pageId === item.id;
+      const isInsertionTarget =
+        activeDrag &&
+        activeDrag.draftIndex !== activeDrag.originalIndex &&
+        activeDrag.draftIndex === index;
+      return (
+        <LocalDraggablePageListItem
+          page={item}
+          pageIndex={index}
+          pageCount={session?.pages.length ?? 0}
+          artifactId={session?.sourceArtifact?.id}
+          isPlaceholder={isPlaceholder}
+          isHighlighted={localDrag.highlightedPageId === item.id}
+          insertionEdge={
+            isInsertionTarget
+              ? activeDrag.draftIndex < activeDrag.originalIndex
+                ? 'before'
+                : 'after'
+              : undefined
+          }
+          dragContext={localDrag.dragContext}
+          onView={viewPage}
+          onDelete={confirmDelete}
+        />
+      );
+    },
     [
       confirmDelete,
-      openOrderSheet,
+      localDrag.dragContext,
+      localDrag.dragSession,
+      localDrag.highlightedPageId,
+      session?.pages.length,
       session?.sourceArtifact?.id,
       viewPage,
     ]
+  );
+
+  const handleMoveToPosition = useCallback(
+    (pageId: string, targetPosition: number) => {
+      moveToPosition(pageId, targetPosition);
+      requestAnimationFrame(() => {
+        localDrag.listRef.current?.scrollToIndex({
+          index: targetPosition - 1,
+          animated: true,
+          viewPosition: 0.5,
+        });
+      });
+    },
+    [localDrag.listRef, moveToPosition]
   );
 
   if (!session) return <AppFlex flex={1} style={styles.screen} />;
@@ -308,25 +353,40 @@ const ComposerReviewScreen = ({ route, navigation }: Props) => {
         </AppFlex>
       ) : null}
 
-      <FlatList
-        data={session.pages}
-        keyExtractor={page => page.id}
-        renderItem={renderPage}
-        getItemLayout={(_data, index) => ({
-          length: DOCUMENT_PAGE_CARD_HEIGHT,
-          offset: theme.spacing.md + PAGE_ITEM_EXTENT * index,
-          index,
-        })}
-        ItemSeparatorComponent={PageSeparator}
-        initialNumToRender={6}
-        maxToRenderPerBatch={5}
-        windowSize={5}
-        updateCellsBatchingPeriod={50}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-        style={styles.list}
-        contentContainerStyle={styles.listContent}
-      />
+      <Animated.View
+        ref={localDrag.dragContext.listViewportRef}
+        collapsable={false}
+        onLayout={localDrag.onListLayout}
+        style={styles.listViewport}
+      >
+        <FlatList
+          ref={localDrag.listRef}
+          data={session.pages}
+          extraData={
+            localDrag.dragSession ?? localDrag.highlightedPageId
+          }
+          keyExtractor={page => page.id}
+          renderItem={renderPage}
+          getItemLayout={(_data, index) => ({
+            length: DOCUMENT_PAGE_CARD_HEIGHT,
+            offset:
+              theme.spacing.md + DOCUMENT_PAGE_ITEM_EXTENT * index,
+            index,
+          })}
+          ItemSeparatorComponent={PageSeparator}
+          initialNumToRender={6}
+          maxToRenderPerBatch={5}
+          windowSize={5}
+          updateCellsBatchingPeriod={50}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          scrollEnabled={!localDrag.dragSession}
+          scrollEventThrottle={32}
+          onScroll={localDrag.onListScroll}
+          style={styles.list}
+          contentContainerStyle={styles.listContent}
+        />
+      </Animated.View>
 
       <AppFlex p="md" gap="sm" style={styles.actions}>
         <AppFlex direction="row" gap="sm">
@@ -386,13 +446,15 @@ const ComposerReviewScreen = ({ route, navigation }: Props) => {
         <ComposerPageOrderSheet
           ref={orderSheetRef}
           page={orderPage}
-          pages={session.pages}
-          artifactId={session.sourceArtifact?.id}
-          onApplyNearbyOrder={applyNearbyOrder}
-          onMoveToPosition={moveToPosition}
+          pageCount={session.pages.length}
+          onMoveToPosition={handleMoveToPosition}
           onDismiss={() => setOrderPageId(undefined)}
         />
       ) : null}
+      <LocalPageDragLayer
+        context={localDrag.dragContext}
+        session={localDrag.dragSession}
+      />
     </AppFlex>
   );
 };
@@ -417,6 +479,7 @@ const styles = StyleSheet.create(theme => ({
   error: {
     backgroundColor: theme.colors.surface.status.error,
   },
+  listViewport: { flex: 1 },
   list: { flex: 1 },
   listContent: { padding: theme.spacing.md, paddingBottom: theme.spacing.xl },
   pageSeparator: { height: DOCUMENT_PAGE_CARD_GAP },

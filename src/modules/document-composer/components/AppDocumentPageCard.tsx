@@ -1,5 +1,10 @@
-import { memo } from 'react';
-import { Pressable, View } from 'react-native';
+import { memo, type ReactNode } from 'react';
+import {
+  Pressable,
+  View,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import AppStatusBadge from '@/components/feedback/AppStatusBadge';
 import AppIcon from '@/components/icons/AppIcon';
@@ -8,13 +13,14 @@ import DocumentPageThumbnail from './DocumentPageThumbnail';
 import { DOCUMENT_PAGE_CARD_HEIGHT } from '../constants/documentComposerLayout';
 import type { ComposerPage } from '../types/documentComposer.types';
 
-export type AppDocumentPageCardProps = {
+type AppDocumentPageCardProps = {
   page: ComposerPage;
   thumbnailUri?: string;
   isThumbnailLoading: boolean;
   onView: (pageId: string) => void;
   onDelete: (pageId: string) => void;
-  onOrder: (pageId: string) => void;
+  dragHandle: ReactNode;
+  style?: StyleProp<ViewStyle>;
 };
 
 const AppDocumentPageCard = ({
@@ -23,11 +29,12 @@ const AppDocumentPageCard = ({
   isThumbnailLoading,
   onView,
   onDelete,
-  onOrder,
+  dragHandle,
+  style,
 }: AppDocumentPageCardProps) => {
   const { theme } = useUnistyles();
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, style]}>
       <View style={styles.thumbnail}>
         <DocumentPageThumbnail
           page={page}
@@ -86,17 +93,7 @@ const AppDocumentPageCard = ({
             mColor={theme.colors.text.error}
           />
         </Pressable>
-        <Pressable
-          accessibilityLabel={`Ordenar página ${page.order}`}
-          onPress={() => onOrder(page.id)}
-          style={styles.handle}
-        >
-          <AppIcon
-            name="sortAscending"
-            size={22}
-            mColor={theme.colors.navigation.active}
-          />
-        </Pressable>
+        {dragHandle}
       </View>
     </View>
   );
@@ -148,14 +145,6 @@ const styles = StyleSheet.create(theme => ({
     justifyContent: 'center',
     borderRadius: theme.radius.sm,
     backgroundColor: theme.colors.surface.background.elements,
-  },
-  handle: {
-    width: 38,
-    height: 38,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: theme.radius.sm,
-    backgroundColor: theme.colors.navigation.rail,
   },
 }));
 

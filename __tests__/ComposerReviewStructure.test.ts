@@ -1,0 +1,37 @@
+declare const __dirname: string;
+
+const readSource = (relativePath: string) =>
+  require('fs').readFileSync(
+    `${__dirname}/../${relativePath}`,
+    'utf8'
+  );
+
+describe('ComposerReview reorder structure', () => {
+  const reviewScreen = readSource(
+    'src/modules/document-composer/screens/ComposerReviewScreen.tsx'
+  );
+  const localDragSources = [
+    'src/modules/document-composer/components/LocalDraggablePageListItem.tsx',
+    'src/modules/document-composer/components/LocalPageDragHandle.tsx',
+    'src/modules/document-composer/components/LocalPageDragLayer.tsx',
+  ].map(readSource);
+
+  it('keeps the main document virtualized with FlatList', () => {
+    expect(reviewScreen).toContain('<FlatList');
+    expect(reviewScreen).toContain('keyExtractor={page => page.id}');
+    expect(reviewScreen).toContain('getItemLayout=');
+  });
+
+  it('does not mount a global Sortable or use the DnD package', () => {
+    expect(reviewScreen).not.toMatch(/<Sortable(?:Grid)?\b/);
+    expect(
+      [reviewScreen, ...localDragSources].join('\n')
+    ).not.toContain('react-native-reanimated-dnd');
+  });
+
+  it('does not render PdfView in list or drag components', () => {
+    expect(
+      [reviewScreen, ...localDragSources].join('\n')
+    ).not.toContain('PdfView');
+  });
+});
