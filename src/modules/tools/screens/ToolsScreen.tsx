@@ -1,10 +1,11 @@
 import { useEffect } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppHeader from '@/components/navigation/AppHeader';
 import AppCard from '@/components/layout/AppCard';
+import AppFlex from '@/components/layout/AppFlex';
 import AppIcon from '@/components/icons/AppIcon';
 import AppText from '@/components/typography/AppText';
 import type { MainAppNavigatorNavigationProp } from '@/app/navigation/MainAppNavigator';
@@ -27,7 +28,7 @@ const ToolsScreen = () => {
     navigation.navigate('ComposerReview', { mode: 'tool', source });
 
   return (
-    <View style={styles.screen}>
+    <AppFlex flex={1} style={styles.screen}>
       <AppHeader title="Herramientas" eyebrow="Documentos" />
       <ScrollView
         contentContainerStyle={[
@@ -35,34 +36,39 @@ const ToolsScreen = () => {
           { paddingBottom: insets.bottom + 24 },
         ]}
       >
-        <View style={styles.intro}>
+        <AppFlex gap="xs" style={styles.intro}>
           <AppText variant="title.l" color="headings">
             Crea y organiza archivos PDF
           </AppText>
           <AppText variant="text.sm.regular" color="details">
             Flujos reutilizables, sin asociarlos a un contrato.
           </AppText>
-        </View>
+        </AppFlex>
         <AppCard
           emphasized
           onPress={() => openComposer('scanner')}
           style={styles.toolCard}
         >
-          <View style={styles.iconSurface}>
+          <AppFlex
+            size={50}
+            align="center"
+            justify="center"
+            style={styles.iconSurface}
+          >
             <AppIcon
               name="scan"
               size={27}
               mColor={theme.colors.navigation.active}
             />
-          </View>
-          <View style={styles.toolCopy}>
+          </AppFlex>
+          <AppFlex flex={1} gap="xs">
             <AppText variant="title.m" color="headings">
               Escanear a PDF
             </AppText>
             <AppText variant="text.sm.regular" color="details">
               Captura, ordena y genera un PDF.
             </AppText>
-          </View>
+          </AppFlex>
           <AppIcon
             name="caretRight"
             size={20}
@@ -70,22 +76,27 @@ const ToolsScreen = () => {
           />
         </AppCard>
         <AppCard onPress={() => openComposer('pdf')} style={styles.toolCard}>
-          <View style={styles.iconSurface}>
+          <AppFlex
+            size={50}
+            align="center"
+            justify="center"
+            style={styles.iconSurface}
+          >
             <AppIcon
               name="filePdf"
               size={27}
               mColor={theme.colors.icon.secondary}
               variant="featured"
             />
-          </View>
-          <View style={styles.toolCopy}>
+          </AppFlex>
+          <AppFlex flex={1} gap="xs">
             <AppText variant="title.m" color="headings">
               Organizar un PDF
             </AppText>
             <AppText variant="text.sm.regular" color="details">
               Reordena, elimina o agrega páginas.
             </AppText>
-          </View>
+          </AppFlex>
           <AppIcon
             name="caretRight"
             size={20}
@@ -94,7 +105,7 @@ const ToolsScreen = () => {
         </AppCard>
 
         {drafts.length > 0 ? (
-          <View style={styles.drafts}>
+          <AppFlex gap="sm" style={styles.drafts}>
             <AppText variant="overline" color="details">
               BORRADORES
             </AppText>
@@ -117,26 +128,30 @@ const ToolsScreen = () => {
               >
                 Borradores de escaneo
               </AppText>
-              <View style={styles.count}>
+              <AppFlex
+                height={26}
+                align="center"
+                justify="center"
+                style={styles.count}
+              >
                 <AppText variant="text.xs.bold" color="link">
                   {drafts.length}
                 </AppText>
-              </View>
+              </AppFlex>
             </Pressable>
-          </View>
+          </AppFlex>
         ) : null}
       </ScrollView>
-    </View>
+    </AppFlex>
   );
 };
 
 const styles = StyleSheet.create(theme => ({
   screen: {
-    flex: 1,
     backgroundColor: theme.colors.surface.background.primary,
   },
   content: { padding: theme.spacing.md, gap: theme.spacing.md },
-  intro: { marginBottom: theme.spacing.sm, gap: theme.spacing.xs },
+  intro: { marginBottom: theme.spacing.sm },
   toolCard: {
     minHeight: 108,
     padding: theme.spacing.md,
@@ -145,15 +160,11 @@ const styles = StyleSheet.create(theme => ({
     gap: theme.spacing.md,
   },
   iconSurface: {
-    width: 50,
-    height: 50,
     borderRadius: theme.radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
     backgroundColor: theme.colors.navigation.rail,
   },
-  toolCopy: { flex: 1, gap: theme.spacing.xs },
-  drafts: { marginTop: theme.spacing.md, gap: theme.spacing.sm },
+  toolCopy: { flex: 1 },
+  drafts: { marginTop: theme.spacing.md },
   draftsButton: {
     minHeight: theme.control.height.large,
     paddingHorizontal: theme.spacing.md,
@@ -167,10 +178,7 @@ const styles = StyleSheet.create(theme => ({
   },
   count: {
     minWidth: 28,
-    height: 26,
     borderRadius: theme.radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
     backgroundColor: theme.colors.surface.background.submenu,
   },
   pressed: { opacity: theme.opacity.pressed },

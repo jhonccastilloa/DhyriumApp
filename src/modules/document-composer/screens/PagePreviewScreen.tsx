@@ -1,9 +1,10 @@
-import { Alert, Image, View } from 'react-native';
+import { Alert, Image } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ZoomPdfView } from 'react-native-pdf-light/Zoom';
 import { StyleSheet } from 'react-native-unistyles';
 import AppHeader from '@/components/navigation/AppHeader';
 import { AppButton } from '@/components/buttons/AppButton';
+import AppFlex from '@/components/layout/AppFlex';
 import AppText from '@/components/typography/AppText';
 import type { MainAppNavigatorParamList } from '@/app/navigation/MainAppNavigator';
 import { useDocumentComposerStore } from '../state/useDocumentComposerStore';
@@ -19,7 +20,7 @@ const PagePreviewScreen = ({ route, navigation }: Props) => {
   const markLegible = useDocumentComposerStore(state => state.markLegible);
   const page = session?.pages.find(item => item.id === route.params.pageId);
 
-  if (!session || !page) return <View style={styles.screen} />;
+  if (!session || !page) return <AppFlex flex={1} style={styles.screen} />;
 
   const confirmDelete = () => {
     Alert.alert(
@@ -40,13 +41,13 @@ const PagePreviewScreen = ({ route, navigation }: Props) => {
   };
 
   return (
-    <View style={styles.screen}>
+    <AppFlex flex={1} style={styles.screen}>
       <AppHeader
         title={`Página ${page.order} de ${session.pages.length}`}
         eyebrow={page.fileName}
         showBack
       />
-      <View style={styles.preview}>
+      <AppFlex flex={1} p="sm">
         {page.origin === 'scanned' ? (
           <Image
             source={{ uri: page.uri }}
@@ -62,14 +63,14 @@ const PagePreviewScreen = ({ route, navigation }: Props) => {
             style={styles.image}
           />
         )}
-      </View>
-      <View style={styles.footer}>
+      </AppFlex>
+      <AppFlex p="md" gap="md" style={styles.footer}>
         <AppText variant="text.sm.regular" color="details" numberOfLines={1}>
           {page.origin === 'scanned'
             ? page.uri.replace(/^.*\//, '…/')
             : `PDF original · página ${page.originalPageNumber}`}
         </AppText>
-        <View style={styles.actions}>
+        <AppFlex direction="row" gap="sm">
           <AppButton
             text="Eliminar"
             variant="ghost"
@@ -88,24 +89,20 @@ const PagePreviewScreen = ({ route, navigation }: Props) => {
               navigation.goBack();
             }}
           />
-        </View>
-      </View>
-    </View>
+        </AppFlex>
+      </AppFlex>
+    </AppFlex>
   );
 };
 
 const styles = StyleSheet.create(theme => ({
-  screen: { flex: 1, backgroundColor: theme.colors.surface.background.primary },
-  preview: { flex: 1, padding: theme.spacing.sm },
+  screen: { backgroundColor: theme.colors.surface.background.primary },
   image: { width: '100%', height: '100%' },
   footer: {
-    padding: theme.spacing.md,
-    gap: theme.spacing.md,
     backgroundColor: theme.colors.surface.background.cards,
     borderTopWidth: theme.border.hairline,
     borderTopColor: theme.colors.border.subtle,
   },
-  actions: { flexDirection: 'row', gap: theme.spacing.sm },
   action: { flex: 1 },
 }));
 

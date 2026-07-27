@@ -3,6 +3,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import AppHeader from '@/components/navigation/AppHeader';
 import AppIcon from '@/components/icons/AppIcon';
+import AppFlex from '@/components/layout/AppFlex';
 import AppText from '@/components/typography/AppText';
 import type { MainAppNavigatorParamList } from '@/app/navigation/MainAppNavigator';
 import { useDocumentComposerStore } from '../state/useDocumentComposerStore';
@@ -34,7 +35,7 @@ const ComposerDraftsScreen = ({ navigation }: Props) => {
   };
 
   return (
-    <View style={styles.screen}>
+    <AppFlex flex={1} style={styles.screen}>
       <AppHeader showBack title="Borradores" count={drafts.length} />
       <FlatList
         data={drafts}
@@ -83,22 +84,28 @@ const ComposerDraftsScreen = ({ navigation }: Props) => {
           </Pressable>
         )}
         ListEmptyComponent={
-          <View style={styles.empty}>
+          <AppFlex
+            flex={1}
+            align="center"
+            justify="center"
+            gap="sm"
+            style={styles.empty}
+          >
             <AppText variant="title.m" color="headings">
               No hay borradores
             </AppText>
             <AppText variant="text.sm.regular" color="details" align="center">
               Los borradores reales aparecerán aquí cuando guardes una sesión.
             </AppText>
-          </View>
+          </AppFlex>
         }
       />
-    </View>
+    </AppFlex>
   );
 };
 
 const styles = StyleSheet.create(theme => ({
-  screen: { flex: 1, backgroundColor: theme.colors.surface.background.primary },
+  screen: { backgroundColor: theme.colors.surface.background.primary },
   content: { padding: theme.spacing.md, flexGrow: 1 },
   separator: { height: theme.spacing.sm },
   card: {
@@ -121,7 +128,7 @@ const styles = StyleSheet.create(theme => ({
     borderRadius: theme.radius.sm,
     backgroundColor: theme.colors.surface.status.error,
   },
-  empty: { flex: 1, minHeight: 260, alignItems: 'center', justifyContent: 'center', gap: theme.spacing.sm },
+  empty: { minHeight: 260 },
   pressed: { opacity: theme.opacity.pressed },
 }));
 

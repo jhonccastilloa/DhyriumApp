@@ -1,9 +1,10 @@
-import { Alert, Pressable, ScrollView, View } from 'react-native';
+import { Alert, Pressable, ScrollView } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppHeader from '@/components/navigation/AppHeader';
 import AppText from '@/components/typography/AppText';
 import AppCard from '@/components/layout/AppCard';
+import AppFlex from '@/components/layout/AppFlex';
 import AppIcon from '@/components/icons/AppIcon';
 import { useProfileQuery } from '@/modules/profile/queries/useProfileQuery';
 import { useAuthStore } from '@/modules/auth/state/useAuthStore';
@@ -42,7 +43,7 @@ const MoreScreen = () => {
   };
 
   return (
-    <View style={styles.screen}>
+    <AppFlex flex={1} style={styles.screen}>
       <AppHeader title="Más" eyebrow="Cuenta y apariencia" />
       <ScrollView
         contentContainerStyle={[
@@ -51,7 +52,12 @@ const MoreScreen = () => {
         ]}
       >
         <AppCard style={styles.profileCard}>
-          <View style={styles.avatar}>
+          <AppFlex
+            size={52}
+            align="center"
+            justify="center"
+            style={styles.avatar}
+          >
             <AppText variant="title.l" color="link">
               {(profile.data?.fullName || 'D')
                 .split(/\s+/)
@@ -60,8 +66,8 @@ const MoreScreen = () => {
                 .join('')
                 .toUpperCase()}
             </AppText>
-          </View>
-          <View style={styles.profileCopy}>
+          </AppFlex>
+          <AppFlex flex={1} gap="xs">
             <AppText variant="title.m" color="headings">
               {profile.data?.fullName || 'Cargando…'}
             </AppText>
@@ -70,10 +76,10 @@ const MoreScreen = () => {
                 {profile.data.roleName}
               </AppText>
             ) : null}
-          </View>
+          </AppFlex>
         </AppCard>
 
-        <View style={styles.section}>
+        <AppFlex gap="sm">
           <AppText variant="overline" color="details">
             TEMA DE LA APLICACIÓN
           </AppText>
@@ -119,7 +125,7 @@ const MoreScreen = () => {
               );
             })}
           </AppCard>
-        </View>
+        </AppFlex>
 
         <Pressable
           onPress={confirmLogout}
@@ -138,13 +144,12 @@ const MoreScreen = () => {
           </AppText>
         </Pressable>
       </ScrollView>
-    </View>
+    </AppFlex>
   );
 };
 
 const styles = StyleSheet.create(theme => ({
   screen: {
-    flex: 1,
     backgroundColor: theme.colors.surface.background.primary,
   },
   content: { padding: theme.spacing.md, gap: theme.spacing.xl },
@@ -155,15 +160,9 @@ const styles = StyleSheet.create(theme => ({
     gap: theme.spacing.md,
   },
   avatar: {
-    width: 52,
-    height: 52,
     borderRadius: theme.radius.lg,
     backgroundColor: theme.colors.surface.background.submenu,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
-  profileCopy: { flex: 1, gap: theme.spacing.xs },
-  section: { gap: theme.spacing.sm },
   option: {
     minHeight: theme.control.height.large,
     paddingHorizontal: theme.spacing.md,

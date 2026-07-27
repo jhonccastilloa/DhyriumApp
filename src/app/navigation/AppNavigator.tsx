@@ -2,10 +2,11 @@ import {
   DefaultTheme,
   type Theme as NavigationTheme,
 } from '@react-navigation/native';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator } from 'react-native';
 import RootNavigator from './RootNavigator';
-import { StyleSheet, useUnistyles } from 'react-native-unistyles';
+import { useUnistyles } from 'react-native-unistyles';
 import { useEffect } from 'react';
+import AppFlex from '@/components/layout/AppFlex';
 import { useAuthStore } from '@/modules/auth/state/useAuthStore';
 import { AuthStatus } from '@/modules/auth/types/authStatus.types';
 
@@ -47,14 +48,14 @@ const AppNavigator = () => {
 
   if (authStatus === AuthStatus.checking) {
     return (
-      <View
-        style={[
-          styles.loading,
-          { backgroundColor: theme.colors.surface.background.primary },
-        ]}
+      <AppFlex
+        flex={1}
+        align="center"
+        justify="center"
+        style={{ backgroundColor: theme.colors.surface.background.primary }}
       >
         <ActivityIndicator color={theme.colors.text.link} />
-      </View>
+      </AppFlex>
     );
   }
 
@@ -62,11 +63,3 @@ const AppNavigator = () => {
 };
 
 export default AppNavigator;
-
-const styles = StyleSheet.create({
-  loading: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});

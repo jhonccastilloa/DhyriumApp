@@ -1,6 +1,7 @@
-import { Image, View } from 'react-native';
+import { Image } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import AppIcon from '@/components/icons/AppIcon';
+import AppFlex from '@/components/layout/AppFlex';
 import AppText from '@/components/typography/AppText';
 import type { ComposerPage } from '../types/documentComposer.types';
 
@@ -24,7 +25,13 @@ const DocumentPageThumbnail = ({
   }
 
   return (
-    <View style={styles.placeholder}>
+    <AppFlex
+      width="100%"
+      height="100%"
+      align="center"
+      justify="center"
+      gap="xs"
+    >
       <AppIcon
         name="filePdf"
         size={compact ? 24 : 30}
@@ -40,19 +47,12 @@ const DocumentPageThumbnail = ({
           </AppText>
         </>
       ) : null}
-    </View>
+    </AppFlex>
   );
 };
 
-const styles = StyleSheet.create(theme => ({
+const styles = StyleSheet.create({
   image: { width: '100%', height: '100%', resizeMode: 'cover' },
-  placeholder: {
-    width: '100%',
-    height: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: theme.spacing.xs,
-  },
-}));
+});
 
 export default DocumentPageThumbnail;

@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AxiosError } from 'axios';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
@@ -7,6 +6,7 @@ import { AppButton } from '@/components/buttons/AppButton';
 import AppHeader from '@/components/navigation/AppHeader';
 import AppIcon from '@/components/icons/AppIcon';
 import AppProgressBar from '@/components/feedback/AppProgressBar';
+import AppFlex from '@/components/layout/AppFlex';
 import AppText from '@/components/typography/AppText';
 import type { IconName } from '@/components/icons/iconRegistry';
 import type { MainAppNavigatorParamList } from '@/app/navigation/MainAppNavigator';
@@ -108,7 +108,7 @@ const ComposerProcessScreen = ({ navigation }: Props) => {
     void run();
   }, [run]);
 
-  if (!session) return <View style={styles.screen} />;
+  if (!session) return <AppFlex flex={1} style={styles.screen} />;
   const failed =
     session.status === 'generationError' ||
     session.status === 'associationError';
@@ -148,14 +148,14 @@ const ComposerProcessScreen = ({ navigation }: Props) => {
   ];
 
   return (
-    <View style={styles.screen}>
+    <AppFlex flex={1} style={styles.screen}>
       <AppHeader
         title="Preparando documento"
         eyebrow={session.name}
         showBack={failed}
       />
-      <View style={styles.content}>
-        <View style={styles.hero}>
+      <AppFlex flex={1} p="lg" justify="center" gap="xl">
+        <AppFlex align="center" gap="md">
           {failed ? (
             <AppIcon
               name="warningCircle"
@@ -181,27 +181,33 @@ const ComposerProcessScreen = ({ navigation }: Props) => {
               ? session.errorMessage
               : 'Puedes distinguir la transferencia del procesamiento del servidor.'}
           </AppText>
-        </View>
+        </AppFlex>
 
         {session.status === 'transferring' ? (
-          <View style={styles.progress}>
-            <View style={styles.progressCopy}>
+          <AppFlex p="md" gap="sm" style={styles.progress}>
+            <AppFlex direction="row" justify="space-between">
               <AppText variant="text.sm.bold" color="body">
                 Subida
               </AppText>
               <AppText variant="text.sm.bold" color="link">
                 {session.uploadProgress}%
               </AppText>
-            </View>
+            </AppFlex>
             <AppProgressBar value={session.uploadProgress} />
-          </View>
+          </AppFlex>
         ) : null}
 
-        <View style={styles.stages}>
+        <AppFlex p="md" gap="sm" style={styles.stages}>
           {stages.map(stage => {
             return (
-              <View key={stage.key} style={styles.stage}>
-                <View style={styles.stageIcon}>
+              <AppFlex
+                key={stage.key}
+                direction="row"
+                align="center"
+                gap="md"
+                style={styles.stage}
+              >
+                <AppFlex width={30} align="center">
                   {stage.complete ? (
                     <AppIcon
                       name="checkCircle"
@@ -220,17 +226,17 @@ const ComposerProcessScreen = ({ navigation }: Props) => {
                       }
                     />
                   )}
-                </View>
+                </AppFlex>
                 <AppText
                   variant="text.md.bold"
                   color={stage.complete || stage.active ? 'body' : 'details'}
                 >
                   {stage.label}
                 </AppText>
-              </View>
+              </AppFlex>
             );
           })}
-        </View>
+        </AppFlex>
 
         {failed ? (
           <AppButton
@@ -245,37 +251,24 @@ const ComposerProcessScreen = ({ navigation }: Props) => {
             }}
           />
         ) : null}
-      </View>
-    </View>
+      </AppFlex>
+    </AppFlex>
   );
 };
 
 const styles = StyleSheet.create(theme => ({
-  screen: { flex: 1, backgroundColor: theme.colors.surface.background.primary },
-  content: {
-    flex: 1,
-    padding: theme.spacing.lg,
-    justifyContent: 'center',
-    gap: theme.spacing.xl,
-  },
-  hero: { alignItems: 'center', gap: theme.spacing.md },
+  screen: { backgroundColor: theme.colors.surface.background.primary },
   progress: {
-    padding: theme.spacing.md,
-    gap: theme.spacing.sm,
     borderRadius: theme.radius.md,
     backgroundColor: theme.colors.surface.background.cards,
   },
-  progressCopy: { flexDirection: 'row', justifyContent: 'space-between' },
   stages: {
-    padding: theme.spacing.md,
-    gap: theme.spacing.sm,
     borderRadius: theme.radius.md,
     backgroundColor: theme.colors.surface.background.cards,
     borderWidth: theme.border.hairline,
     borderColor: theme.colors.border.subtle,
   },
-  stage: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md },
-  stageIcon: { width: 30, alignItems: 'center' },
+  stage: { minHeight: 48 },
 }));
 
 export default ComposerProcessScreen;

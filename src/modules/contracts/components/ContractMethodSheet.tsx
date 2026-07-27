@@ -1,5 +1,5 @@
 import type { RefObject } from 'react';
-import { Pressable, View } from 'react-native';
+import { Pressable } from 'react-native';
 import {
   BottomSheetModal,
   BottomSheetScrollView,
@@ -7,6 +7,7 @@ import {
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import AppBottomSheetModal from '@/components/bottom-sheets/AppBottomSheetModal';
 import AppIcon from '@/components/icons/AppIcon';
+import AppFlex from '@/components/layout/AppFlex';
 import AppText from '@/components/typography/AppText';
 import type { IconName } from '@/components/icons/iconRegistry';
 import type { ContractTreeNode } from '../types/contracts.types';
@@ -51,22 +52,27 @@ const ContractMethodSheet = ({
           pressed && styles.pressed,
         ]}
       >
-        <View style={styles.icon}>
+        <AppFlex
+          size={46}
+          align="center"
+          justify="center"
+          style={styles.icon}
+        >
           <AppIcon
             name={icon}
             size={25}
             mColor={theme.colors.navigation.active}
             variant="featured"
           />
-        </View>
-        <View style={styles.actionCopy}>
+        </AppFlex>
+        <AppFlex flex={1} gap="xs">
           <AppText variant="text.md.bold" color="headings">
             {title}
           </AppText>
           <AppText variant="text.sm.regular" color="details">
             {description}
           </AppText>
-        </View>
+        </AppFlex>
       </Pressable>
     );
   };
@@ -82,7 +88,7 @@ const ContractMethodSheet = ({
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.heading}>
+        <AppFlex pb="sm" gap="xs">
           <AppText variant="overline" color="details">
             {node?.code || ''}
           </AppText>
@@ -92,7 +98,7 @@ const ContractMethodSheet = ({
           <AppText variant="text.xs.regular" color="details" numberOfLines={2}>
             {path.join(' / ')}
           </AppText>
-        </View>
+        </AppFlex>
         {uploaded
           ? action(
               'Ver PDF actual',
@@ -140,7 +146,6 @@ const styles = StyleSheet.create(theme => ({
     paddingBottom: theme.spacing.xl,
     gap: theme.spacing.sm,
   },
-  heading: { paddingBottom: theme.spacing.sm, gap: theme.spacing.xs },
   action: {
     minHeight: 76,
     padding: theme.spacing.md,
@@ -153,14 +158,9 @@ const styles = StyleSheet.create(theme => ({
     backgroundColor: theme.colors.surface.background.cards,
   },
   icon: {
-    width: 46,
-    height: 46,
     borderRadius: theme.radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
     backgroundColor: theme.colors.navigation.rail,
   },
-  actionCopy: { flex: 1, gap: theme.spacing.xs },
   pressed: { opacity: theme.opacity.pressed },
 }));
 

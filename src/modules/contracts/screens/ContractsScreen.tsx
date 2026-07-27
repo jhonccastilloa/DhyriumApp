@@ -14,6 +14,7 @@ import { toast } from 'sonner-native';
 import AppHeader from '@/components/navigation/AppHeader';
 import AppSearchInput from '@/components/inputs/AppSearchInput';
 import AppCard from '@/components/layout/AppCard';
+import AppFlex from '@/components/layout/AppFlex';
 import AppIcon from '@/components/icons/AppIcon';
 import AppStatusBadge, {
   type AppStatusTone,
@@ -181,7 +182,7 @@ const ContractsScreen = () => {
   };
 
   return (
-    <View style={styles.screen}>
+    <AppFlex flex={1} style={styles.screen}>
       <AppHeader
         title="Contratos"
         eyebrow="Gestión documental"
@@ -222,7 +223,7 @@ const ContractsScreen = () => {
           />
         }
         ListHeaderComponent={
-          <View style={styles.listHeader}>
+          <AppFlex gap="md" style={styles.listHeader}>
             <Pressable
               onPress={() => companySheet.current?.present()}
               style={({ pressed }) => [
@@ -230,14 +231,14 @@ const ContractsScreen = () => {
                 pressed && styles.pressed,
               ]}
             >
-              <View style={styles.scopeCopy}>
+              <AppFlex flex={1} gap="xs">
                 <AppText variant="text.xs.bold" color="details">
                   EMPRESA O CONSORCIO
                 </AppText>
                 <AppText variant="text.md.bold" color="headings" numberOfLines={1}>
                   {scope?.name || 'Selecciona un contexto'}
                 </AppText>
-              </View>
+              </AppFlex>
               <AppIcon
                 name="caretDown"
                 size={18}
@@ -250,7 +251,7 @@ const ContractsScreen = () => {
               onClear={() => setSearch('')}
               placeholder="Buscar por CUI, contrato o proyecto"
             />
-            <View style={styles.controls}>
+            <AppFlex direction="row" gap="sm">
               <Pressable
                 onPress={() => filterSheet.current?.present()}
                 style={({ pressed }) => [
@@ -268,14 +269,27 @@ const ContractsScreen = () => {
                   Filtros
                 </AppText>
                 {activeFilters > 0 ? (
-                  <View style={styles.filterCount}>
+                  <AppFlex
+                    height={22}
+                    ph="xs"
+                    align="center"
+                    justify="center"
+                    style={styles.filterCount}
+                  >
                     <AppText variant="text.xs.bold" color="link">
                       {activeFilters}
                     </AppText>
-                  </View>
+                  </AppFlex>
                 ) : null}
               </Pressable>
-              <View style={styles.control}>
+              <AppFlex
+                direction="row"
+                align="center"
+                justify="center"
+                gap="sm"
+                ph="md"
+                style={styles.control}
+              >
                 <AppIcon
                   name="sortAscending"
                   size={19}
@@ -284,10 +298,10 @@ const ContractsScreen = () => {
                 <AppText variant="text.sm.bold" color="body">
                   Recientes
                 </AppText>
-              </View>
-            </View>
+              </AppFlex>
+            </AppFlex>
             {chips.length > 0 ? (
-              <View style={styles.appliedFilters}>
+              <AppFlex direction="row" flexWrap="wrap" align="center" gap="sm">
                 {chips.map(chip => (
                   <AppFilterChip
                     key={chip.key}
@@ -306,7 +320,7 @@ const ContractsScreen = () => {
                     Limpiar todo
                   </AppText>
                 </Pressable>
-              </View>
+              </AppFlex>
             ) : null}
             {contracts.isError ? (
               <Pressable
@@ -321,18 +335,24 @@ const ContractsScreen = () => {
                 </AppText>
               </Pressable>
             ) : null}
-          </View>
+          </AppFlex>
         }
         ListEmptyComponent={
           contracts.isLoading || contracts.isError ? null : (
-            <View style={styles.state}>
+            <AppFlex
+              align="center"
+              justify="center"
+              gap="sm"
+              p="lg"
+              style={styles.state}
+            >
               <AppText variant="title.m" color="headings">
                 No hay contratos para mostrar
               </AppText>
               <AppText variant="text.sm.regular" color="details" align="center">
                 Ajusta la búsqueda o los filtros activos.
               </AppText>
-            </View>
+            </AppFlex>
           )
         }
       />
@@ -351,12 +371,12 @@ const ContractsScreen = () => {
         filters={filters}
         onApply={setFilters}
       />
-    </View>
+    </AppFlex>
   );
 };
 
 const styles = StyleSheet.create(theme => ({
-  screen: { flex: 1, backgroundColor: theme.colors.surface.background.primary },
+  screen: { backgroundColor: theme.colors.surface.background.primary },
   headerAction: {
     minWidth: 54,
     height: theme.control.hitSlop,
@@ -369,7 +389,7 @@ const styles = StyleSheet.create(theme => ({
     backgroundColor: theme.colors.navigation.rail,
   },
   list: { padding: theme.spacing.md, paddingBottom: theme.spacing.xl },
-  listHeader: { gap: theme.spacing.md, marginBottom: theme.spacing.md },
+  listHeader: { marginBottom: theme.spacing.md },
   scope: {
     minHeight: 62,
     paddingHorizontal: theme.spacing.md,
@@ -380,15 +400,8 @@ const styles = StyleSheet.create(theme => ({
     borderWidth: theme.border.hairline,
     borderColor: theme.colors.border.subtle,
   },
-  scopeCopy: { flex: 1, gap: theme.spacing.xs },
-  controls: { flexDirection: 'row', gap: theme.spacing.sm },
   control: {
     minHeight: 42,
-    paddingHorizontal: theme.spacing.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: theme.spacing.sm,
     borderRadius: theme.radius.sm,
     backgroundColor: theme.colors.surface.background.cards,
     borderWidth: theme.border.hairline,
@@ -396,18 +409,8 @@ const styles = StyleSheet.create(theme => ({
   },
   filterCount: {
     minWidth: 22,
-    height: 22,
-    paddingHorizontal: theme.spacing.xs,
     borderRadius: theme.radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
     backgroundColor: theme.colors.navigation.rail,
-  },
-  appliedFilters: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    gap: theme.spacing.sm,
   },
   contractCard: { padding: theme.spacing.md, gap: theme.spacing.sm },
   cardHeading: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
@@ -431,10 +434,6 @@ const styles = StyleSheet.create(theme => ({
   separator: { height: theme.spacing.sm },
   state: {
     minHeight: 140,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: theme.spacing.sm,
-    padding: theme.spacing.lg,
   },
   pressed: { opacity: theme.opacity.pressed },
 }));

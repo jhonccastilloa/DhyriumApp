@@ -4,6 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppIcon from '@/components/icons/AppIcon';
+import AppFlex from '@/components/layout/AppFlex';
 import AppText from '@/components/typography/AppText';
 
 type AppHeaderProps = {
@@ -34,8 +35,12 @@ const AppHeader = ({
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top + 8 }]}>
-      <View style={styles.row}>
+    <AppFlex
+      ph="md"
+      pb="md"
+      style={[styles.container, { paddingTop: insets.top + 8 }]}
+    >
+      <AppFlex direction="row" align="center" gap="sm" style={styles.row}>
         {showBack ? (
           <Pressable
             onPress={handleBack}
@@ -52,13 +57,13 @@ const AppHeader = ({
             />
           </Pressable>
         ) : null}
-        <View style={styles.titleContainer}>
+        <AppFlex flex={1} style={styles.titleContainer}>
           {eyebrow ? (
             <AppText variant="overline" color="details" numberOfLines={1}>
               {eyebrow.toUpperCase()}
             </AppText>
           ) : null}
-          <View style={styles.titleRow}>
+          <AppFlex direction="row" align="center" gap="sm">
             <AppText
               variant="title.xl"
               color="headings"
@@ -68,43 +73,47 @@ const AppHeader = ({
               {title}
             </AppText>
             {typeof count === 'number' ? (
-              <View style={styles.count}>
+              <AppFlex
+                height={24}
+                ph="sm"
+                align="center"
+                justify="center"
+                style={styles.count}
+              >
                 <AppText variant="text.xs.bold" color="link">
                   {count}
                 </AppText>
-              </View>
+              </AppFlex>
             ) : null}
             {badge ? (
-              <View style={styles.badge}>
+              <AppFlex
+                ph="sm"
+                align="center"
+                justify="center"
+                style={styles.badge}
+              >
                 <AppText variant="text.xs.bold" color="link">
                   {badge}
                 </AppText>
-              </View>
+              </AppFlex>
             ) : null}
-          </View>
-        </View>
+          </AppFlex>
+        </AppFlex>
         {rightAction ? (
           <View style={styles.rightAction}>{rightAction}</View>
         ) : null}
-      </View>
-    </View>
+      </AppFlex>
+    </AppFlex>
   );
 };
 
 const styles = StyleSheet.create(theme => ({
   container: {
     backgroundColor: theme.colors.surface.background.cards,
-    paddingHorizontal: theme.spacing.md,
-    paddingBottom: theme.spacing.md,
     borderBottomWidth: theme.border.hairline,
     borderBottomColor: theme.colors.border.subtle,
   },
-  row: {
-    minHeight: theme.control.height.default,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing.sm,
-  },
+  row: { minHeight: theme.control.height.default },
   backButton: {
     width: theme.control.hitSlop,
     height: theme.control.hitSlop,
@@ -114,29 +123,17 @@ const styles = StyleSheet.create(theme => ({
     backgroundColor: theme.colors.surface.background.elements,
   },
   pressed: { opacity: theme.opacity.pressed },
-  titleContainer: { flex: 1, minWidth: 0 },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing.sm,
-  },
+  titleContainer: { minWidth: 0 },
   title: { flexShrink: 1 },
   count: {
     minWidth: 28,
-    height: 24,
-    paddingHorizontal: theme.spacing.sm,
     borderRadius: theme.radius.pill,
     backgroundColor: theme.colors.surface.background.submenu,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   badge: {
     minHeight: 24,
-    paddingHorizontal: theme.spacing.sm,
     borderRadius: theme.radius.pill,
     backgroundColor: theme.colors.surface.background.submenu,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   rightAction: { marginLeft: theme.spacing.xs },
 }));

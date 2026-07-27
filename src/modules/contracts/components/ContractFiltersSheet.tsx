@@ -17,6 +17,7 @@ import AppBottomSheetModal from '@/components/bottom-sheets/AppBottomSheetModal'
 import { AppButton } from '@/components/buttons/AppButton';
 import AppFilterChip from '@/components/filters/AppFilterChip';
 import AppIcon from '@/components/icons/AppIcon';
+import AppFlex from '@/components/layout/AppFlex';
 import AppText from '@/components/typography/AppText';
 import { useContractCountQuery } from '../queries/contractQueries';
 import {
@@ -80,7 +81,7 @@ const ContractFiltersSheet = ({
   const footer = useCallback(
     (props: BottomSheetFooterProps) => (
       <BottomSheetFooter {...props} bottomInset={0}>
-        <View style={styles.footer}>
+        <AppFlex p="md" style={styles.footer}>
           <AppButton
             text={`Aplicar filtros · ${count.data ?? '—'} resultados`}
             onPress={() => {
@@ -88,7 +89,7 @@ const ContractFiltersSheet = ({
               sheetRef.current?.dismiss();
             }}
           />
-        </View>
+        </AppFlex>
       </BottomSheetFooter>
     ),
     [count.data, draft, onApply, sheetRef]
@@ -102,16 +103,16 @@ const ContractFiltersSheet = ({
       enablePanDownToClose
       footerComponent={footer}
     >
-      <View style={styles.heading}>
-        <View style={styles.headingRow}>
-          <View style={styles.headingCopy}>
+      <AppFlex ph="md" pb="sm">
+        <AppFlex direction="row" align="center">
+          <AppFlex flex={1}>
             <AppText variant="title.l" color="headings">
               Filtros
             </AppText>
             <AppText variant="text.sm.regular" color="details">
               {countActiveContractFilters(draft)} criterios activos
             </AppText>
-          </View>
+          </AppFlex>
           <Pressable
             onPress={() => setDraft(EMPTY_CONTRACT_FILTERS)}
             hitSlop={8}
@@ -120,17 +121,17 @@ const ContractFiltersSheet = ({
               Restablecer
             </AppText>
           </Pressable>
-        </View>
-      </View>
+        </AppFlex>
+      </AppFlex>
       <BottomSheetScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.section}>
+        <AppFlex gap="sm">
           <AppText variant="overline" color="details">
             VISTAS RÁPIDAS
           </AppText>
-          <View style={styles.chips}>
+          <AppFlex direction="row" flexWrap="wrap" gap="sm">
             <AppFilterChip
               label="Vencen pronto"
               selected={draft.dueSoon}
@@ -151,14 +152,14 @@ const ContractFiltersSheet = ({
                 }))
               }
             />
-          </View>
-        </View>
+          </AppFlex>
+        </AppFlex>
 
-        <View style={styles.section}>
+        <AppFlex gap="sm">
           <AppText variant="overline" color="details">
             ESTADO CONTRACTUAL
           </AppText>
-          <View style={styles.chips}>
+          <AppFlex direction="row" flexWrap="wrap" gap="sm">
             {STATUS_OPTIONS.map(option => (
               <AppFilterChip
                 key={option.value}
@@ -167,14 +168,14 @@ const ContractFiltersSheet = ({
                 onPress={() => toggleStatus(option.value)}
               />
             ))}
-          </View>
-        </View>
+          </AppFlex>
+        </AppFlex>
 
-        <View style={styles.section}>
+        <AppFlex gap="sm">
           <AppText variant="overline" color="details">
             AÑO O PERIODO
           </AppText>
-          <View style={styles.chips}>
+          <AppFlex direction="row" flexWrap="wrap" gap="sm">
             {years.map(year => (
               <AppFilterChip
                 key={year}
@@ -188,10 +189,10 @@ const ContractFiltersSheet = ({
                 }
               />
             ))}
-          </View>
-        </View>
+          </AppFlex>
+        </AppFlex>
 
-        <View style={styles.section}>
+        <AppFlex gap="sm">
           <AppText variant="overline" color="details">
             TIPO DE INSTRUMENTO
           </AppText>
@@ -229,7 +230,7 @@ const ContractFiltersSheet = ({
               </Pressable>
             );
           })}
-        </View>
+        </AppFlex>
         <View style={styles.footerSpacer} />
       </BottomSheetScrollView>
     </AppBottomSheetModal>
@@ -237,19 +238,12 @@ const ContractFiltersSheet = ({
 };
 
 const styles = StyleSheet.create(theme => ({
-  heading: {
-    paddingHorizontal: theme.spacing.md,
-    paddingBottom: theme.spacing.sm,
-  },
-  headingRow: { flexDirection: 'row', alignItems: 'center' },
   headingCopy: { flex: 1 },
   content: {
     paddingHorizontal: theme.spacing.md,
     paddingTop: theme.spacing.sm,
     gap: theme.spacing.lg,
   },
-  section: { gap: theme.spacing.sm },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.sm },
   instrument: {
     minHeight: theme.control.height.default,
     paddingHorizontal: theme.spacing.md,
@@ -264,7 +258,6 @@ const styles = StyleSheet.create(theme => ({
     backgroundColor: theme.colors.surface.background.submenu,
   },
   footer: {
-    padding: theme.spacing.md,
     backgroundColor: theme.colors.surface.background.cards,
     borderTopWidth: theme.border.hairline,
     borderTopColor: theme.colors.border.subtle,

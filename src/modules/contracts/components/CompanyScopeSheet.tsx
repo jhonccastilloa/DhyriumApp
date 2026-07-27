@@ -1,5 +1,5 @@
 import { useMemo, useState, type RefObject } from 'react';
-import { Pressable, View } from 'react-native';
+import { Pressable } from 'react-native';
 import {
   BottomSheetModal,
   BottomSheetScrollView,
@@ -8,6 +8,7 @@ import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import AppBottomSheetModal from '@/components/bottom-sheets/AppBottomSheetModal';
 import AppIcon from '@/components/icons/AppIcon';
 import AppSearchInput from '@/components/inputs/AppSearchInput';
+import AppFlex from '@/components/layout/AppFlex';
 import AppText from '@/components/typography/AppText';
 import type { ContractScope } from '../types/contracts.types';
 
@@ -44,7 +45,7 @@ const CompanyScopeSheet = ({
       keyboardBehavior="interactive"
       keyboardBlurBehavior="restore"
     >
-      <View style={styles.heading}>
+      <AppFlex ph="md" pb="md" gap="sm">
         <AppText variant="title.l" color="headings">
           Cambiar empresa
         </AppText>
@@ -57,7 +58,7 @@ const CompanyScopeSheet = ({
           onClear={() => setSearch('')}
           placeholder="Buscar empresa o consorcio"
         />
-      </View>
+      </AppFlex>
       <BottomSheetScrollView
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
@@ -78,7 +79,12 @@ const CompanyScopeSheet = ({
                 pressed && styles.pressed,
               ]}
             >
-              <View style={styles.icon}>
+              <AppFlex
+                size={40}
+                align="center"
+                justify="center"
+                style={styles.icon}
+              >
                 <AppIcon
                   name="buildings"
                   size={22}
@@ -88,8 +94,8 @@ const CompanyScopeSheet = ({
                       : theme.colors.icon.secondary
                   }
                 />
-              </View>
-              <View style={styles.optionCopy}>
+              </AppFlex>
+              <AppFlex flex={1} gap="xs">
                 <AppText variant="text.md.bold" color="headings">
                   {scope.name}
                 </AppText>
@@ -98,7 +104,7 @@ const CompanyScopeSheet = ({
                   {scope.contractCount}{' '}
                   {scope.contractCount === 1 ? 'contrato' : 'contratos'}
                 </AppText>
-              </View>
+              </AppFlex>
               {isSelected ? (
                 <AppIcon
                   name="checkCircle"
@@ -116,11 +122,6 @@ const CompanyScopeSheet = ({
 };
 
 const styles = StyleSheet.create(theme => ({
-  heading: {
-    paddingHorizontal: theme.spacing.md,
-    paddingBottom: theme.spacing.md,
-    gap: theme.spacing.sm,
-  },
   content: {
     paddingHorizontal: theme.spacing.md,
     paddingBottom: theme.spacing.xl,
@@ -142,14 +143,9 @@ const styles = StyleSheet.create(theme => ({
     backgroundColor: theme.colors.surface.background.submenu,
   },
   icon: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
     borderRadius: theme.radius.sm,
     backgroundColor: theme.colors.surface.background.elements,
   },
-  optionCopy: { flex: 1, gap: theme.spacing.xs },
   pressed: { opacity: theme.opacity.pressed },
 }));
 

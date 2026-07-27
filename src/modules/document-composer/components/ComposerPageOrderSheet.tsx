@@ -4,13 +4,14 @@ import {
   useMemo,
   useState,
 } from 'react';
-import { Pressable, View } from 'react-native';
+import { Pressable } from 'react-native';
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import AppBottomSheetModal from '@/components/bottom-sheets/AppBottomSheetModal';
 import { AppButton } from '@/components/buttons/AppButton';
 import AppIcon from '@/components/icons/AppIcon';
 import AppTextInput from '@/components/inputs/AppTextInput';
+import AppFlex from '@/components/layout/AppFlex';
 import AppOptionItem from '@/components/options/AppOptionItem';
 import AppText from '@/components/typography/AppText';
 import {
@@ -100,9 +101,15 @@ const ComposerPageOrderSheet = ({
       keyboardBlurBehavior="restore"
       onDismiss={onDismiss}
     >
-      <View style={styles.sheet}>
-        <View style={styles.sheetHeader}>
-          <View style={styles.sheetTitle}>
+      <AppFlex flex={1} p="md" pb="lg" gap="md">
+        <AppFlex
+          direction="row"
+          align="center"
+          justify="space-between"
+          gap="sm"
+          style={styles.sheetHeader}
+        >
+          <AppFlex flex={1} gap="xs">
             <AppText variant="title.m" color="headings">
               {stage === 'menu'
                 ? `Ordenar página ${page.order}`
@@ -115,7 +122,7 @@ const ComposerPageOrderSheet = ({
                 Página seleccionada: {page.order}
               </AppText>
             ) : null}
-          </View>
+          </AppFlex>
           <Pressable
             accessibilityLabel="Cerrar"
             onPress={close}
@@ -127,10 +134,10 @@ const ComposerPageOrderSheet = ({
               mColor={theme.colors.icon.secondary}
             />
           </Pressable>
-        </View>
+        </AppFlex>
 
         {stage === 'menu' ? (
-          <View style={styles.menu}>
+          <AppFlex gap="sm">
             <AppOptionItem
               iconLeft="sortAscending"
               title="Mover a posición"
@@ -145,20 +152,20 @@ const ComposerPageOrderSheet = ({
               onPress={() => setStage('nearby')}
               style={styles.menuOption}
             />
-          </View>
+          </AppFlex>
         ) : null}
 
         {stage === 'move' ? (
-          <View style={styles.moveContent}>
-            <View style={styles.pageSummary}>
+          <AppFlex flex={1} gap="md">
+            <AppFlex p="sm" gap="xs" style={styles.pageSummary}>
               <AppText variant="text.xs.regular" color="details">
                 Página que se moverá
               </AppText>
               <AppText variant="text.sm.bold" color="headings">
                 Página {page.order} · {page.fileName}
               </AppText>
-            </View>
-            <View style={styles.field}>
+            </AppFlex>
+            <AppFlex gap="xs">
               <AppText variant="text.sm.bold" color="body">
                 Posición de referencia (1–{pages.length})
               </AppText>
@@ -179,8 +186,8 @@ const ComposerPageOrderSheet = ({
                   Elige una página de referencia distinta.
                 </AppText>
               ) : null}
-            </View>
-            <View style={styles.segment}>
+            </AppFlex>
+            <AppFlex direction="row" p="xs" gap="xs" style={styles.segment}>
               {(['before', 'after'] as const).map(option => {
                 const selected = placement === option;
                 return (
@@ -203,8 +210,8 @@ const ComposerPageOrderSheet = ({
                   </Pressable>
                 );
               })}
-            </View>
-            <View style={styles.destination}>
+            </AppFlex>
+            <AppFlex p="sm" gap="xs" style={styles.destination}>
               <AppText variant="text.xs.regular" color="details">
                 Destino
               </AppText>
@@ -215,8 +222,8 @@ const ComposerPageOrderSheet = ({
                     } · ${targetPage.fileName}`
                   : 'Selecciona una posición para ver el destino.'}
               </AppText>
-            </View>
-            <View style={styles.sheetActions}>
+            </AppFlex>
+            <AppFlex direction="row" gap="sm" style={styles.sheetActions}>
               <AppButton
                 text="Cancelar"
                 variant="ghost"
@@ -229,8 +236,8 @@ const ComposerPageOrderSheet = ({
                 style={styles.sheetAction}
                 onPress={move}
               />
-            </View>
-          </View>
+            </AppFlex>
+          </AppFlex>
         ) : null}
 
         {stage === 'nearby' ? (
@@ -242,26 +249,15 @@ const ComposerPageOrderSheet = ({
             onSave={saveNearbyOrder}
           />
         ) : null}
-      </View>
+      </AppFlex>
     </AppBottomSheetModal>
   );
 };
 
 const styles = StyleSheet.create(theme => ({
-  sheet: {
-    flex: 1,
-    padding: theme.spacing.md,
-    paddingBottom: theme.spacing.lg,
-    gap: theme.spacing.md,
-  },
   sheetHeader: {
     minHeight: 40,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: theme.spacing.sm,
   },
-  sheetTitle: { flex: 1, gap: theme.spacing.xs },
   closeButton: {
     width: 40,
     height: 40,
@@ -270,24 +266,16 @@ const styles = StyleSheet.create(theme => ({
     borderRadius: theme.radius.sm,
     backgroundColor: theme.colors.surface.background.elements,
   },
-  menu: { gap: theme.spacing.sm },
   menuOption: {
     borderWidth: theme.border.hairline,
     borderColor: theme.colors.border.subtle,
     backgroundColor: theme.colors.surface.background.primary,
   },
-  moveContent: { flex: 1, gap: theme.spacing.md },
   pageSummary: {
-    padding: theme.spacing.sm,
-    gap: theme.spacing.xs,
     borderRadius: theme.radius.sm,
     backgroundColor: theme.colors.surface.background.elements,
   },
-  field: { gap: theme.spacing.xs },
   segment: {
-    flexDirection: 'row',
-    padding: theme.spacing.xs,
-    gap: theme.spacing.xs,
     borderRadius: theme.radius.sm,
     backgroundColor: theme.colors.surface.background.elements,
   },
@@ -304,16 +292,12 @@ const styles = StyleSheet.create(theme => ({
     borderColor: theme.colors.border.focus,
   },
   destination: {
-    padding: theme.spacing.sm,
-    gap: theme.spacing.xs,
     borderRadius: theme.radius.sm,
     borderWidth: theme.border.hairline,
     borderColor: theme.colors.border.subtle,
   },
   sheetActions: {
     marginTop: 'auto',
-    flexDirection: 'row',
-    gap: theme.spacing.sm,
   },
   sheetAction: { flex: 1 },
 }));

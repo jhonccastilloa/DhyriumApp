@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { View } from 'react-native';
 import Share from 'react-native-share';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
@@ -7,6 +6,7 @@ import { toast } from 'sonner-native';
 import { AppButton } from '@/components/buttons/AppButton';
 import AppHeader from '@/components/navigation/AppHeader';
 import AppIcon from '@/components/icons/AppIcon';
+import AppFlex from '@/components/layout/AppFlex';
 import AppText from '@/components/typography/AppText';
 import type { MainAppNavigatorParamList } from '@/app/navigation/MainAppNavigator';
 import DocumentComposerService from '../services/DocumentComposerService';
@@ -29,7 +29,8 @@ const ComposerResultScreen = ({ navigation }: Props) => {
   const clearSession = useDocumentComposerStore(state => state.clearSession);
   const artifact = session?.artifact;
 
-  if (!session || !artifact) return <View style={styles.screen} />;
+  if (!session || !artifact)
+    return <AppFlex flex={1} style={styles.screen} />;
 
   const sharePdf = async () => {
     setSharing(true);
@@ -63,10 +64,10 @@ const ComposerResultScreen = ({ navigation }: Props) => {
   };
 
   return (
-    <View style={styles.screen}>
+    <AppFlex flex={1} style={styles.screen}>
       <AppHeader title="Documento listo" eyebrow="Resultado" />
-      <View style={styles.content}>
-        <View style={styles.hero}>
+      <AppFlex flex={1} p="lg" justify="center" gap="md">
+        <AppFlex align="center" gap="md" style={styles.hero}>
           <AppIcon
             name="checkCircle"
             size={66}
@@ -83,26 +84,37 @@ const ComposerResultScreen = ({ navigation }: Props) => {
               ? `${session.destination?.levelCode} · ${session.destination?.levelName}`
               : 'Puedes verlo, guardarlo o compartirlo desde tu dispositivo.'}
           </AppText>
-        </View>
+        </AppFlex>
 
-        <View style={styles.fileCard}>
-          <View style={styles.fileIcon}>
+        <AppFlex
+          direction="row"
+          align="center"
+          gap="md"
+          p="md"
+          style={styles.fileCard}
+        >
+          <AppFlex
+            size={52}
+            align="center"
+            justify="center"
+            style={styles.fileIcon}
+          >
             <AppIcon
               name="filePdf"
               size={30}
               mColor={theme.colors.navigation.active}
               variant="featured"
             />
-          </View>
-          <View style={styles.fileCopy}>
+          </AppFlex>
+          <AppFlex flex={1} gap="xs">
             <AppText variant="text.md.bold" color="headings" numberOfLines={2}>
               {artifact.name}
             </AppText>
             <AppText variant="text.sm.regular" color="details">
               {artifact.pageCount} páginas · {formatBytes(artifact.sizeBytes)}
             </AppText>
-          </View>
-        </View>
+          </AppFlex>
+        </AppFlex>
 
         <AppButton
           text="Ver PDF"
@@ -121,7 +133,7 @@ const ComposerResultScreen = ({ navigation }: Props) => {
             )
           }
         >
-          <View style={styles.shareContent}>
+          <AppFlex direction="row" align="center" gap="sm">
             <AppIcon
               name="shareNetwork"
               size={20}
@@ -130,7 +142,7 @@ const ComposerResultScreen = ({ navigation }: Props) => {
             <AppText variant="button" color="button">
               Guardar o compartir
             </AppText>
-          </View>
+          </AppFlex>
         </AppButton>
         <AppButton
           text={
@@ -141,35 +153,24 @@ const ComposerResultScreen = ({ navigation }: Props) => {
           variant="link"
           onPress={finish}
         />
-      </View>
-    </View>
+      </AppFlex>
+    </AppFlex>
   );
 };
 
 const styles = StyleSheet.create(theme => ({
-  screen: { flex: 1, backgroundColor: theme.colors.surface.background.primary },
-  content: { flex: 1, padding: theme.spacing.lg, justifyContent: 'center', gap: theme.spacing.md },
-  hero: { alignItems: 'center', gap: theme.spacing.md, marginBottom: theme.spacing.md },
+  screen: { backgroundColor: theme.colors.surface.background.primary },
+  hero: { marginBottom: theme.spacing.md },
   fileCard: {
-    padding: theme.spacing.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing.md,
     borderRadius: theme.radius.md,
     backgroundColor: theme.colors.surface.background.cards,
     borderWidth: theme.border.hairline,
     borderColor: theme.colors.border.subtle,
   },
   fileIcon: {
-    width: 52,
-    height: 52,
     borderRadius: theme.radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
     backgroundColor: theme.colors.navigation.rail,
   },
-  fileCopy: { flex: 1, gap: theme.spacing.xs },
-  shareContent: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
 }));
 
 export default ComposerResultScreen;

@@ -19,6 +19,7 @@ import { toast } from 'sonner-native';
 import AppHeader from '@/components/navigation/AppHeader';
 import { AppButton } from '@/components/buttons/AppButton';
 import AppIcon from '@/components/icons/AppIcon';
+import AppFlex from '@/components/layout/AppFlex';
 import AppText from '@/components/typography/AppText';
 import type { MainAppNavigatorParamList } from '@/app/navigation/MainAppNavigator';
 import { asFileUri } from '@/infrastructure/storage/fileSystemUtils';
@@ -246,7 +247,7 @@ const ComposerReviewScreen = ({ route, navigation }: Props) => {
     ]
   );
 
-  if (!session) return <View style={styles.screen} />;
+  if (!session) return <AppFlex flex={1} style={styles.screen} />;
   const busy =
     session.status === 'transferring' || session.status === 'processing';
   const orderPage = orderPageId
@@ -254,7 +255,7 @@ const ComposerReviewScreen = ({ route, navigation }: Props) => {
     : undefined;
 
   return (
-    <View style={styles.screen}>
+    <AppFlex flex={1} style={styles.screen}>
       <AppHeader
         showBack
         eyebrow={
@@ -265,7 +266,7 @@ const ComposerReviewScreen = ({ route, navigation }: Props) => {
         title="Revisar páginas"
         count={session.pages.length}
       />
-      <View style={styles.summary}>
+      <AppFlex p="md" gap="sm" style={styles.summary}>
         <TextInput
           value={session.name}
           onChangeText={setName}
@@ -274,7 +275,7 @@ const ComposerReviewScreen = ({ route, navigation }: Props) => {
           placeholderTextColor={theme.colors.text.details}
           style={styles.nameInput}
         />
-        <View style={styles.orderSummary}>
+        <AppFlex direction="row" justify="space-between" gap="sm">
           <AppText variant="text.xs.regular" color="details">
             Orden final
           </AppText>
@@ -285,11 +286,11 @@ const ComposerReviewScreen = ({ route, navigation }: Props) => {
                 } · Orden personalizado`
               : 'Sin páginas'}
           </AppText>
-        </View>
-      </View>
+        </AppFlex>
+      </AppFlex>
 
       {session.status === 'transferError' ? (
-        <View style={styles.error}>
+        <AppFlex p="md" gap="sm" style={styles.error}>
           <AppText variant="text.sm.bold" color="error">
             {session.errorMessage || 'No se pudo preparar el documento.'}
           </AppText>
@@ -304,7 +305,7 @@ const ComposerReviewScreen = ({ route, navigation }: Props) => {
                 : choosePdf())
             }
           />
-        </View>
+        </AppFlex>
       ) : null}
 
       <FlatList
@@ -327,8 +328,8 @@ const ComposerReviewScreen = ({ route, navigation }: Props) => {
         contentContainerStyle={styles.listContent}
       />
 
-      <View style={styles.actions}>
-        <View style={styles.secondaryActions}>
+      <AppFlex p="md" gap="sm" style={styles.actions}>
+        <AppFlex direction="row" gap="sm">
           <Pressable
             onPress={() => void startScanner(true)}
             style={styles.secondaryButton}
@@ -355,8 +356,8 @@ const ComposerReviewScreen = ({ route, navigation }: Props) => {
               Repetir todo
             </AppText>
           </Pressable>
-        </View>
-        <View style={styles.footerRow}>
+        </AppFlex>
+        <AppFlex direction="row" gap="sm">
           <AppButton
             text="Guardar borrador"
             variant="ghost"
@@ -378,8 +379,8 @@ const ComposerReviewScreen = ({ route, navigation }: Props) => {
             }
             onPress={() => navigation.navigate('ComposerProcess')}
           />
-        </View>
-      </View>
+        </AppFlex>
+      </AppFlex>
 
       {orderPage ? (
         <ComposerPageOrderSheet
@@ -392,15 +393,13 @@ const ComposerReviewScreen = ({ route, navigation }: Props) => {
           onDismiss={() => setOrderPageId(undefined)}
         />
       ) : null}
-    </View>
+    </AppFlex>
   );
 };
 
 const styles = StyleSheet.create(theme => ({
-  screen: { flex: 1, backgroundColor: theme.colors.surface.background.primary },
+  screen: { backgroundColor: theme.colors.surface.background.primary },
   summary: {
-    padding: theme.spacing.md,
-    gap: theme.spacing.sm,
     backgroundColor: theme.colors.surface.background.cards,
     borderBottomWidth: theme.border.hairline,
     borderBottomColor: theme.colors.border.subtle,
@@ -415,23 +414,17 @@ const styles = StyleSheet.create(theme => ({
     backgroundColor: theme.colors.surface.background.primary,
     ...theme.typography.text.md.bold,
   },
-  orderSummary: { flexDirection: 'row', justifyContent: 'space-between', gap: theme.spacing.sm },
   error: {
-    padding: theme.spacing.md,
-    gap: theme.spacing.sm,
     backgroundColor: theme.colors.surface.status.error,
   },
   list: { flex: 1 },
   listContent: { padding: theme.spacing.md, paddingBottom: theme.spacing.xl },
   pageSeparator: { height: DOCUMENT_PAGE_CARD_GAP },
   actions: {
-    padding: theme.spacing.md,
-    gap: theme.spacing.sm,
     backgroundColor: theme.colors.surface.background.cards,
     borderTopWidth: theme.border.hairline,
     borderTopColor: theme.colors.border.subtle,
   },
-  secondaryActions: { flexDirection: 'row', gap: theme.spacing.sm },
   secondaryButton: {
     minHeight: 42,
     flex: 1,
@@ -443,7 +436,6 @@ const styles = StyleSheet.create(theme => ({
     borderRadius: theme.radius.sm,
     backgroundColor: theme.colors.surface.background.elements,
   },
-  footerRow: { flexDirection: 'row', gap: theme.spacing.sm },
   draftButton: { flex: 1 },
   generateButton: { flex: 1.2 },
 }));

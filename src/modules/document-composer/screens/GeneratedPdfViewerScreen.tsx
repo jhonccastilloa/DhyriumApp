@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Pdf } from 'react-native-pdf-light';
 import { StyleSheet } from 'react-native-unistyles';
+import AppFlex from '@/components/layout/AppFlex';
 import AppHeader from '@/components/navigation/AppHeader';
 import AppText from '@/components/typography/AppText';
 import type { MainAppNavigatorParamList } from '@/app/navigation/MainAppNavigator';
@@ -32,7 +32,7 @@ const GeneratedPdfViewerScreen = ({ route }: Props) => {
   }, [route.params.artifact]);
 
   return (
-    <View style={styles.screen}>
+    <AppFlex flex={1} style={styles.screen}>
       <AppHeader
         showBack
         title={route.params.artifact.name}
@@ -41,22 +41,21 @@ const GeneratedPdfViewerScreen = ({ route }: Props) => {
       {source ? (
         <Pdf source={source} shrinkToFit="always" />
       ) : (
-        <View style={styles.state}>
+        <AppFlex flex={1} align="center" justify="center">
           <AppText
             variant="text.md.bold"
             color={error ? 'error' : 'details'}
           >
             {error || 'Descargando PDF…'}
           </AppText>
-        </View>
+        </AppFlex>
       )}
-    </View>
+    </AppFlex>
   );
 };
 
 const styles = StyleSheet.create(theme => ({
-  screen: { flex: 1, backgroundColor: theme.colors.surface.background.primary },
-  state: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  screen: { backgroundColor: theme.colors.surface.background.primary },
 }));
 
 export default GeneratedPdfViewerScreen;

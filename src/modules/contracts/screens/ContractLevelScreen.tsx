@@ -1,9 +1,10 @@
 import { useMemo, useRef, useState } from 'react';
-import { Alert, ScrollView, View } from 'react-native';
+import { Alert, ScrollView } from 'react-native';
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useQueryClient } from '@tanstack/react-query';
 import { StyleSheet } from 'react-native-unistyles';
+import AppFlex from '@/components/layout/AppFlex';
 import AppHeader from '@/components/navigation/AppHeader';
 import AppText from '@/components/typography/AppText';
 import type { MainAppNavigatorNavigationProp } from '@/app/navigation/MainAppNavigator';
@@ -88,7 +89,7 @@ const ContractLevelScreen = ({ route, navigation }: Props) => {
 
   const children = parent?.children || [];
   return (
-    <View style={styles.screen}>
+    <AppFlex flex={1} style={styles.screen}>
       <AppHeader
         showBack
         eyebrow={`${parent?.code || parentCode} · ${path
@@ -101,14 +102,14 @@ const ContractLevelScreen = ({ route, navigation }: Props) => {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.context}>
+        <AppFlex p="md" gap="xs" style={styles.context}>
           <AppText variant="overline" color="details">
             RUTA ACTUAL
           </AppText>
           <AppText variant="text.sm.regular" color="body">
             {path.join(' / ')}
           </AppText>
-        </View>
+        </AppFlex>
         {children.map(node => (
           <ContractDocumentNodeCard
             key={node.code}
@@ -137,14 +138,20 @@ const ContractLevelScreen = ({ route, navigation }: Props) => {
           />
         ) : null}
         {!tree.isLoading && children.length === 0 && !parent?.acceptsPdf ? (
-          <View style={styles.empty}>
+          <AppFlex
+            align="center"
+            justify="center"
+            gap="sm"
+            p="lg"
+            style={styles.empty}
+          >
             <AppText variant="title.m" color="headings">
               Grupo sin documentos
             </AppText>
             <AppText variant="text.sm.regular" color="details" align="center">
               Este nivel no tiene destinos configurados para la versión móvil.
             </AppText>
-          </View>
+          </AppFlex>
         ) : null}
       </ScrollView>
       <ContractMethodSheet
@@ -164,26 +171,20 @@ const ContractLevelScreen = ({ route, navigation }: Props) => {
         onOrganize={() => openComposer('pdf', true)}
         onDelete={removeCurrent}
       />
-    </View>
+    </AppFlex>
   );
 };
 
 const styles = StyleSheet.create(theme => ({
-  screen: { flex: 1, backgroundColor: theme.colors.surface.background.primary },
+  screen: { backgroundColor: theme.colors.surface.background.primary },
   content: { padding: theme.spacing.md, paddingBottom: theme.spacing.xl, gap: theme.spacing.sm },
   context: {
     marginBottom: theme.spacing.sm,
-    padding: theme.spacing.md,
-    gap: theme.spacing.xs,
     borderRadius: theme.radius.md,
     backgroundColor: theme.colors.surface.background.submenu,
   },
   empty: {
     minHeight: 180,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: theme.spacing.sm,
-    padding: theme.spacing.lg,
   },
 }));
 

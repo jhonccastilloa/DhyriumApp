@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { ScrollView } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { StyleSheet } from 'react-native-unistyles';
 import AppHeader from '@/components/navigation/AppHeader';
 import AppProgressBar from '@/components/feedback/AppProgressBar';
 import AppSearchInput from '@/components/inputs/AppSearchInput';
 import AppFilterChip from '@/components/filters/AppFilterChip';
+import AppFlex from '@/components/layout/AppFlex';
 import AppText from '@/components/typography/AppText';
 import type { HomeNavigatorParamList } from '@/modules/home/navigation/HomeNavigator';
 import ContractDocumentNodeCard from '../components/ContractDocumentNodeCard';
@@ -38,7 +39,7 @@ const ContractDetailScreen = ({ route, navigation }: Props) => {
   );
 
   return (
-    <View style={styles.screen}>
+    <AppFlex flex={1} style={styles.screen}>
       <AppHeader
         showBack
         eyebrow={contract.data?.contractNumber || 'Contrato'}
@@ -50,47 +51,47 @@ const ContractDetailScreen = ({ route, navigation }: Props) => {
         showsVerticalScrollIndicator={false}
       >
         {contract.data ? (
-          <View style={styles.summary}>
+          <AppFlex p="md" gap="md" style={styles.summary}>
             <AppText variant="title.l" color="headings">
               {contract.data.projectName}
             </AppText>
-            <View style={styles.dataGrid}>
-              <View style={styles.dataItem}>
+            <AppFlex direction="row" gap="md">
+              <AppFlex flex={1} gap="xs">
                 <AppText variant="text.xs.bold" color="details">
                   CUI
                 </AppText>
                 <AppText variant="text.sm.bold" color="body">
                   {contract.data.cui}
                 </AppText>
-              </View>
-              <View style={styles.dataItem}>
+              </AppFlex>
+              <AppFlex flex={1} gap="xs">
                 <AppText variant="text.xs.bold" color="details">
                   ENTIDAD
                 </AppText>
                 <AppText variant="text.sm.bold" color="body" numberOfLines={2}>
                   {contract.data.entity || 'Sin entidad'}
                 </AppText>
-              </View>
-            </View>
-            <View style={styles.dataGrid}>
-              <View style={styles.dataItem}>
+              </AppFlex>
+            </AppFlex>
+            <AppFlex direction="row" gap="md">
+              <AppFlex flex={1} gap="xs">
                 <AppText variant="text.xs.bold" color="details">
                   NOMENCLATURA
                 </AppText>
                 <AppText variant="text.sm.bold" color="body" numberOfLines={2}>
                   {contract.data.contractNumber || contract.data.name}
                 </AppText>
-              </View>
-              <View style={styles.dataItem}>
+              </AppFlex>
+              <AppFlex flex={1} gap="xs">
                 <AppText variant="text.xs.bold" color="details">
                   FECHA DE FIRMA
                 </AppText>
                 <AppText variant="text.sm.bold" color="body">
                   {formatDate(contract.data.signedAt)}
                 </AppText>
-              </View>
-            </View>
-            <View style={styles.progressRow}>
+              </AppFlex>
+            </AppFlex>
+            <AppFlex direction="row" justify="space-between" gap="sm">
               <AppText variant="text.sm.bold" color="body">
                 Progreso documental
               </AppText>
@@ -98,28 +99,28 @@ const ContractDetailScreen = ({ route, navigation }: Props) => {
                 {contract.data.documentProgress.uploaded}/
                 {contract.data.documentProgress.required} PDF
               </AppText>
-            </View>
+            </AppFlex>
             <AppProgressBar
               value={contract.data.documentProgress.percentage}
             />
-          </View>
+          </AppFlex>
         ) : null}
 
-        <View style={styles.documentsHeader}>
+        <AppFlex gap="xs" style={styles.documentsHeader}>
           <AppText variant="title.l" color="headings">
             Estructura documental
           </AppText>
           <AppText variant="text.sm.regular" color="details">
             Navega por los niveles hasta encontrar el documento.
           </AppText>
-        </View>
+        </AppFlex>
         <AppSearchInput
           value={search}
           onChangeText={setSearch}
           onClear={() => setSearch('')}
           placeholder="Buscar documento o código"
         />
-        <View style={styles.filters}>
+        <AppFlex direction="row" flexWrap="wrap" gap="sm">
           <AppFilterChip
             label="Todos"
             selected={status === 'ALL'}
@@ -135,8 +136,8 @@ const ContractDetailScreen = ({ route, navigation }: Props) => {
             selected={status === 'UPLOADED'}
             onPress={() => setStatus('UPLOADED')}
           />
-        </View>
-        <View style={styles.nodes}>
+        </AppFlex>
+        <AppFlex gap="sm">
           {nodes.map(node => (
             <ContractDocumentNodeCard
               key={node.code}
@@ -151,39 +152,37 @@ const ContractDetailScreen = ({ route, navigation }: Props) => {
             />
           ))}
           {!tree.isLoading && nodes.length === 0 ? (
-            <View style={styles.empty}>
+            <AppFlex
+              align="center"
+              justify="center"
+              gap="sm"
+              style={styles.empty}
+            >
               <AppText variant="title.m" color="headings">
                 Sin coincidencias
               </AppText>
               <AppText variant="text.sm.regular" color="details" align="center">
                 Prueba con otro término o cambia el filtro.
               </AppText>
-            </View>
+            </AppFlex>
           ) : null}
-        </View>
+        </AppFlex>
       </ScrollView>
-    </View>
+    </AppFlex>
   );
 };
 
 const styles = StyleSheet.create(theme => ({
-  screen: { flex: 1, backgroundColor: theme.colors.surface.background.primary },
+  screen: { backgroundColor: theme.colors.surface.background.primary },
   content: { padding: theme.spacing.md, paddingBottom: theme.spacing.xl, gap: theme.spacing.md },
   summary: {
-    padding: theme.spacing.md,
-    gap: theme.spacing.md,
     borderRadius: theme.radius.md,
     backgroundColor: theme.colors.surface.background.cards,
     borderWidth: theme.border.hairline,
     borderColor: theme.colors.border.subtle,
   },
-  dataGrid: { flexDirection: 'row', gap: theme.spacing.md },
-  dataItem: { flex: 1, gap: theme.spacing.xs },
-  progressRow: { flexDirection: 'row', justifyContent: 'space-between', gap: theme.spacing.sm },
-  documentsHeader: { marginTop: theme.spacing.sm, gap: theme.spacing.xs },
-  filters: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.sm },
-  nodes: { gap: theme.spacing.sm },
-  empty: { minHeight: 160, alignItems: 'center', justifyContent: 'center', gap: theme.spacing.sm },
+  documentsHeader: { marginTop: theme.spacing.sm },
+  empty: { minHeight: 160 },
 }));
 
 export default ContractDetailScreen;
