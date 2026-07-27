@@ -107,25 +107,11 @@ const LocalPageDragLayer = ({
             style={[styles.overlay, overlayStyle]}
           >
             <AppFlex
-              width={40}
-              height="100%"
-              align="center"
-              justify="center"
-              style={styles.overlayHandle}
-            >
-              <AppIcon
-                name="dotsSixVertical"
-                size={22}
-                mColor={theme.colors.navigation.active}
-              />
-            </AppFlex>
-            <AppFlex
-              width={64}
-              height={92}
+              width={82}
+              height={116}
               style={styles.overlayThumbnail}
             >
               <DocumentPageThumbnail
-                compact
                 page={session.page}
                 thumbnailUri={session.thumbnailUri}
                 isLoading={false}
@@ -154,6 +140,26 @@ const LocalPageDragLayer = ({
                 Nueva posición: {session.draftIndex + 1}
               </AppText>
             </AppFlex>
+            <AppFlex
+              width={42}
+              height="100%"
+              align="center"
+              justify="flex-end"
+            >
+              <AppFlex
+                width={38}
+                height={38}
+                align="center"
+                justify="center"
+                style={styles.overlayHandle}
+              >
+                <AppIcon
+                  name="dotsSixVertical"
+                  size={22}
+                  mColor={theme.colors.navigation.active}
+                />
+              </AppFlex>
+            </AppFlex>
           </Animated.View>
 
           <AppFlex
@@ -167,13 +173,13 @@ const LocalPageDragLayer = ({
           >
             <LocalPageDropTarget
               context={context}
-              target={LOCAL_DROP_TARGET.moveToPosition}
-              targetRef={context.moveTargetRef}
+              target={LOCAL_DROP_TARGET.cancel}
+              targetRef={context.cancelTargetRef}
             />
             <LocalPageDropTarget
               context={context}
-              target={LOCAL_DROP_TARGET.cancel}
-              targetRef={context.cancelTargetRef}
+              target={LOCAL_DROP_TARGET.moveToPosition}
+              targetRef={context.moveTargetRef}
             />
           </AppFlex>
         </>
