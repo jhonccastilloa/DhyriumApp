@@ -1,25 +1,16 @@
 import { View } from 'react-native';
 import {
   createBottomTabNavigator,
+  createBottomTabScreen,
   type BottomTabNavigationOptions,
 } from '@react-navigation/bottom-tabs';
-import type { NavigatorScreenParams } from '@react-navigation/native';
+import type { StaticParamList } from '@react-navigation/native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import AppIcon from '@/components/icons/AppIcon';
 import type { IconName } from '@/components/icons/iconRegistry';
-import HomeNavigator, {
-  type HomeNavigatorParamList,
-} from '@/modules/home/navigation/HomeNavigator';
+import HomeNavigator from '@/modules/home/navigation/HomeNavigator';
 import ToolsScreen from '@/modules/tools/screens/ToolsScreen';
 import MoreScreen from '@/modules/more/screens/MoreScreen';
-
-export type MainTabsNavigatorParamList = {
-  Inicio: NavigatorScreenParams<HomeNavigatorParamList> | undefined;
-  Herramientas: undefined;
-  Mas: undefined;
-};
-
-const Tab = createBottomTabNavigator<MainTabsNavigatorParamList>();
 
 const TabRailIcon = ({
   name,
@@ -41,7 +32,35 @@ const TabRailIcon = ({
   </View>
 );
 
-const MainTabsNavigator = () => {
+const Tab = createBottomTabNavigator({
+  screens: {
+    Inicio: createBottomTabScreen({
+      screen: HomeNavigator,
+      options: {
+        title: 'Inicio',
+        tabBarIcon: props => <TabRailIcon name="home" {...props} />,
+      },
+    }),
+    Herramientas: createBottomTabScreen({
+      screen: ToolsScreen,
+      options: {
+        title: 'Herramientas',
+        tabBarIcon: props => <TabRailIcon name="toolbox" {...props} />,
+      },
+    }),
+    Mas: createBottomTabScreen({
+      screen: MoreScreen,
+      options: {
+        title: 'Más',
+        tabBarIcon: props => (
+          <TabRailIcon name="dotsThreeOutline" {...props} />
+        ),
+      },
+    }),
+  },
+});
+
+const MainTabsNavigator = Tab.with(({ Navigator }) => {
   const { theme } = useUnistyles();
   const commonOptions: BottomTabNavigationOptions = {
     headerShown: false,
@@ -59,41 +78,12 @@ const MainTabsNavigator = () => {
     tabBarHideOnKeyboard: true,
   };
 
-  return (
-    <Tab.Navigator screenOptions={commonOptions}>
-      <Tab.Screen
-        name="Inicio"
-        component={HomeNavigator}
-        options={{
-          title: 'Inicio',
-          tabBarIcon: props => (
-            <TabRailIcon name="home" {...props} />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Herramientas"
-        component={ToolsScreen}
-        options={{
-          title: 'Herramientas',
-          tabBarIcon: props => (
-            <TabRailIcon name="toolbox" {...props} />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Mas"
-        component={MoreScreen}
-        options={{
-          title: 'Más',
-          tabBarIcon: props => (
-            <TabRailIcon name="dotsThreeOutline" {...props} />
-          ),
-        }}
-      />
-    </Tab.Navigator>
-  );
-};
+  return <Navigator screenOptions={commonOptions} />;
+});
+
+export type MainTabsNavigatorParamList = StaticParamList<
+  typeof MainTabsNavigator
+>;
 
 const styles = StyleSheet.create(theme => ({
   iconContainer: {

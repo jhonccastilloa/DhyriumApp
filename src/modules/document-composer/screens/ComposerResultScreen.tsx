@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import Share from 'react-native-share';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useNavigation } from '@react-navigation/native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { toast } from 'sonner-native';
 import { AppButton } from '@/components/buttons/AppButton';
@@ -8,21 +8,17 @@ import AppHeader from '@/components/navigation/AppHeader';
 import AppIcon from '@/components/icons/AppIcon';
 import AppFlex from '@/components/layout/AppFlex';
 import AppText from '@/components/typography/AppText';
-import type { MainAppNavigatorParamList } from '@/app/navigation/MainAppNavigator';
+import type { MainAppNavigatorNavigationProp } from '@/app/navigation/MainAppNavigator';
 import DocumentComposerService from '../services/DocumentComposerService';
 import { useDocumentComposerStore } from '../state/useDocumentComposerStore';
-
-type Props = NativeStackScreenProps<
-  MainAppNavigatorParamList,
-  'ComposerResult'
->;
 
 const formatBytes = (bytes: number) =>
   bytes >= 1024 * 1024
     ? `${(bytes / (1024 * 1024)).toFixed(1)} MB`
     : `${Math.ceil(bytes / 1024)} KB`;
 
-const ComposerResultScreen = ({ navigation }: Props) => {
+const ComposerResultScreen = () => {
+  const navigation = useNavigation<MainAppNavigatorNavigationProp>();
   const { theme } = useUnistyles();
   const [sharing, setSharing] = useState(false);
   const session = useDocumentComposerStore(state => state.session);

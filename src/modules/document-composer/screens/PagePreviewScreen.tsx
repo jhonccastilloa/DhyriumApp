@@ -1,20 +1,19 @@
 import { Alert, Image } from 'react-native';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useNavigation } from '@react-navigation/native';
+import type { StaticScreenProps } from '@react-navigation/native';
 import { ZoomPdfView } from 'react-native-pdf-light/Zoom';
 import { StyleSheet } from 'react-native-unistyles';
 import AppHeader from '@/components/navigation/AppHeader';
 import { AppButton } from '@/components/buttons/AppButton';
 import AppFlex from '@/components/layout/AppFlex';
 import AppText from '@/components/typography/AppText';
-import type { MainAppNavigatorParamList } from '@/app/navigation/MainAppNavigator';
+import type { MainAppNavigatorNavigationProp } from '@/app/navigation/MainAppNavigator';
 import { useDocumentComposerStore } from '../state/useDocumentComposerStore';
 
-type Props = NativeStackScreenProps<
-  MainAppNavigatorParamList,
-  'PagePreview'
->;
+type Props = StaticScreenProps<{ pageId: string }>;
 
-const PagePreviewScreen = ({ route, navigation }: Props) => {
+const PagePreviewScreen = ({ route }: Props) => {
+  const navigation = useNavigation<MainAppNavigatorNavigationProp>();
   const session = useDocumentComposerStore(state => state.session);
   const deletePage = useDocumentComposerStore(state => state.deletePage);
   const markLegible = useDocumentComposerStore(state => state.markLegible);

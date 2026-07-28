@@ -1,17 +1,14 @@
 import { useEffect, useState } from 'react';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { StaticScreenProps } from '@react-navigation/native';
 import { Pdf } from 'react-native-pdf-light';
 import { StyleSheet } from 'react-native-unistyles';
 import AppFlex from '@/components/layout/AppFlex';
 import AppHeader from '@/components/navigation/AppHeader';
 import AppText from '@/components/typography/AppText';
-import type { MainAppNavigatorParamList } from '@/app/navigation/MainAppNavigator';
 import DocumentComposerService from '../services/DocumentComposerService';
+import type { ComposerArtifact } from '../types/documentComposer.types';
 
-type Props = NativeStackScreenProps<
-  MainAppNavigatorParamList,
-  'GeneratedPdfViewer'
->;
+type Props = StaticScreenProps<{ artifact: ComposerArtifact }>;
 
 const GeneratedPdfViewerScreen = ({ route }: Props) => {
   const [source, setSource] = useState<string>();

@@ -1,14 +1,15 @@
 import { useMemo, useRef, useState } from 'react';
 import { Alert, ScrollView } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { StaticScreenProps } from '@react-navigation/native';
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useQueryClient } from '@tanstack/react-query';
 import { StyleSheet } from 'react-native-unistyles';
 import AppFlex from '@/components/layout/AppFlex';
 import AppHeader from '@/components/navigation/AppHeader';
 import AppText from '@/components/typography/AppText';
 import type { MainAppNavigatorNavigationProp } from '@/app/navigation/MainAppNavigator';
-import type { HomeNavigatorParamList } from '@/modules/home/navigation/HomeNavigator';
+import type { HomeNavigatorNavigationProp } from '@/modules/home/navigation/HomeNavigator';
 import ContractDocumentNodeCard from '../components/ContractDocumentNodeCard';
 import ContractMethodSheet from '../components/ContractMethodSheet';
 import { findContractTreeNode } from '../domain/contractTree';
@@ -16,12 +17,14 @@ import { useContractQuery, useContractTreeQuery } from '../queries/contractQueri
 import ContractsService from '../services/ContractsService';
 import type { ContractTreeNode } from '../types/contracts.types';
 
-type Props = NativeStackScreenProps<
-  HomeNavigatorParamList,
-  'ContractLevel'
->;
+type Props = StaticScreenProps<{
+  contractId: number;
+  parentCode: string;
+  path: string[];
+}>;
 
-const ContractLevelScreen = ({ route, navigation }: Props) => {
+const ContractLevelScreen = ({ route }: Props) => {
+  const navigation = useNavigation<HomeNavigatorNavigationProp>();
   const { contractId, parentCode, path } = route.params;
   const tree = useContractTreeQuery(contractId);
   const contract = useContractQuery(contractId);

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ScrollView } from 'react-native';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useNavigation } from '@react-navigation/native';
+import type { StaticScreenProps } from '@react-navigation/native';
 import { StyleSheet } from 'react-native-unistyles';
 import AppHeader from '@/components/navigation/AppHeader';
 import AppProgressBar from '@/components/feedback/AppProgressBar';
@@ -8,7 +9,7 @@ import AppSearchInput from '@/components/inputs/AppSearchInput';
 import AppFilterChip from '@/components/filters/AppFilterChip';
 import AppFlex from '@/components/layout/AppFlex';
 import AppText from '@/components/typography/AppText';
-import type { HomeNavigatorParamList } from '@/modules/home/navigation/HomeNavigator';
+import type { HomeNavigatorNavigationProp } from '@/modules/home/navigation/HomeNavigator';
 import ContractDocumentNodeCard from '../components/ContractDocumentNodeCard';
 import { filterContractTree } from '../domain/contractTree';
 import { useContractQuery, useContractTreeQuery } from '../queries/contractQueries';
@@ -22,12 +23,10 @@ const formatDate = (value: string | null) =>
       }).format(new Date(value))
     : 'Sin registrar';
 
-type Props = NativeStackScreenProps<
-  HomeNavigatorParamList,
-  'ContractDetail'
->;
+type Props = StaticScreenProps<{ contractId: number }>;
 
-const ContractDetailScreen = ({ route, navigation }: Props) => {
+const ContractDetailScreen = ({ route }: Props) => {
+  const navigation = useNavigation<HomeNavigatorNavigationProp>();
   const { contractId } = route.params;
   const contract = useContractQuery(contractId);
   const tree = useContractTreeQuery(contractId);

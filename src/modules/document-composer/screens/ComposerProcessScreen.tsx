@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useNavigation } from '@react-navigation/native';
 import { AxiosError } from 'axios';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { AppButton } from '@/components/buttons/AppButton';
@@ -9,17 +9,13 @@ import AppProgressBar from '@/components/feedback/AppProgressBar';
 import AppFlex from '@/components/layout/AppFlex';
 import AppText from '@/components/typography/AppText';
 import type { IconName } from '@/components/icons/iconRegistry';
-import type { MainAppNavigatorParamList } from '@/app/navigation/MainAppNavigator';
+import type { MainAppNavigatorNavigationProp } from '@/app/navigation/MainAppNavigator';
 import ContractsService from '@/modules/contracts/services/ContractsService';
 import DocumentComposerService from '../services/DocumentComposerService';
 import { useDocumentComposerStore } from '../state/useDocumentComposerStore';
 
-type Props = NativeStackScreenProps<
-  MainAppNavigatorParamList,
-  'ComposerProcess'
->;
-
-const ComposerProcessScreen = ({ navigation }: Props) => {
+const ComposerProcessScreen = () => {
+  const navigation = useNavigation<MainAppNavigatorNavigationProp>();
   const { theme } = useUnistyles();
   const started = useRef(false);
   const session = useDocumentComposerStore(state => state.session);
