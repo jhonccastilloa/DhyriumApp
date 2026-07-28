@@ -68,8 +68,17 @@ jest.mock('react-native-reanimated', () => {
   return {
     __esModule: true,
     default: { View },
+    cancelAnimation: jest.fn(),
     measure: (ref: unknown) => mockMeasure(ref),
     useSharedValue: (value: unknown) => ({ value }),
+    withTiming: (
+      value: number,
+      _config: unknown,
+      callback?: (finished: boolean) => void
+    ) => {
+      callback?.(true);
+      return value;
+    },
   };
 });
 
@@ -136,8 +145,6 @@ const createContext = () => {
     overlayTranslateY: shared(0),
     overlayWidth: shared(0),
     overlayHeight: shared(138),
-    scrollOffset: shared(0),
-    startScrollOffset: shared(0),
     targetIndex: shared(5),
     autoScrollAllowed: shared(false),
     listBounds: shared<LocalDragBounds | null>(null),
@@ -265,5 +272,33 @@ describe('LocalPageDragHandle gestures', () => {
     expect(context.targetIndex.value).toBe(5);
     expect(onDraftIndexChange).not.toHaveBeenCalled();
     expect(onAutoScroll).not.toHaveBeenCalled();
+  });
+
+  it('autoscrolls once per deliberate edge entry', async () => {
+    const { onAutoScroll } = await renderHandle();
+    const lowerEdgeEvent = {
+      absoluteX: 200,
+      absoluteY: 640,
+      translationY: 20,
+    };
+
+    await act(() => {
+      mockGestureState.pan?.callbacks.onStart?.();
+      mockGestureState.pan?.callbacks.onUpdate?.(lowerEdgeEvent);
+      mockGestureState.pan?.callbacks.onUpdate?.(lowerEdgeEvent);
+    });
+
+    expect(onAutoScroll).toHaveBeenCalledTimes(1);
+    expect(onAutoScroll).toHaveBeenLastCalledWith(1);
+
+    await act(() => {
+      mockGestureState.pan?.callbacks.onUpdate?.({
+        ...lowerEdgeEvent,
+        absoluteY: 400,
+      });
+      mockGestureState.pan?.callbacks.onUpdate?.(lowerEdgeEvent);
+    });
+
+    expect(onAutoScroll).toHaveBeenCalledTimes(2);
   });
 });

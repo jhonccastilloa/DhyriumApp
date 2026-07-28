@@ -2,6 +2,7 @@ import {
   resolveLocalAutoScrollDirection,
   resolveLocalDragOutcome,
   resolveLocalPageShift,
+  resolveLocalTargetIndex,
 } from '@/modules/document-composer/domain/localPageDragGeometry';
 
 const layerBounds = { x: 0, y: 0, width: 400, height: 800 };
@@ -128,6 +129,57 @@ describe('local page drag autoscroll', () => {
         targetIndex: input.minTargetIndex,
       })
     ).toBe(0);
+  });
+});
+
+describe('local page drag target index', () => {
+  const resolveTarget = (
+    movement: number,
+    currentIndex = 4
+  ) =>
+    resolveLocalTargetIndex({
+      movement,
+      originalIndex: 4,
+      currentIndex,
+      minTargetIndex: 0,
+      maxTargetIndex: 8,
+      itemExtent: 146,
+      hysteresis: 16,
+    });
+
+  it('changes only from physical drag movement', () => {
+    expect(resolveTarget(0)).toBe(4);
+    expect(resolveTarget(88)).toBe(4);
+    expect(resolveTarget(89)).toBe(5);
+    expect(resolveTarget(-88)).toBe(4);
+    expect(resolveTarget(-89)).toBe(3);
+  });
+
+  it('uses hysteresis before returning across a crossed boundary', () => {
+    expect(resolveTarget(58, 5)).toBe(5);
+    expect(resolveTarget(57, 5)).toBe(4);
+    expect(resolveTarget(-58, 3)).toBe(3);
+    expect(resolveTarget(-57, 3)).toBe(4);
+  });
+
+  it('clamps rapid movement to the local limits', () => {
+    expect(resolveTarget(10_000)).toBe(8);
+    expect(resolveTarget(-10_000)).toBe(0);
+  });
+
+  it('preserves the current index for invalid geometry', () => {
+    expect(resolveTarget(Number.NaN, 5)).toBe(5);
+    expect(
+      resolveLocalTargetIndex({
+        movement: 146,
+        originalIndex: 4,
+        currentIndex: 4,
+        minTargetIndex: 8,
+        maxTargetIndex: 0,
+        itemExtent: 146,
+        hysteresis: 16,
+      })
+    ).toBe(4);
   });
 });
 

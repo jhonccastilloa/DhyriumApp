@@ -2,8 +2,10 @@ import { useMemo } from 'react';
 import { View, type AccessibilityActionEvent } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
+  cancelAnimation,
   measure,
   useSharedValue,
+  withTiming,
   type AnimatedRef,
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
@@ -15,6 +17,7 @@ import {
   resolveLocalAutoScrollDirection,
   resolveLocalDragOutcome,
   resolveLocalDropTarget,
+  resolveLocalTargetIndex,
 } from '../domain/localPageDragGeometry';
 import { MAX_LOCAL_PAGE_MOVE } from '../domain/pageOrder';
 import type { LocalPageDragContext } from '../hooks/useLocalPageDrag';
@@ -32,7 +35,8 @@ type LocalPageDragHandleProps = {
 const ACTIVATION_DELAY_MS = 220;
 const TAP_MAX_DURATION_MS = ACTIVATION_DELAY_MS;
 const EDGE_SCROLL_THRESHOLD = 56;
-const AUTO_SCROLL_THROTTLE_MS = 80;
+const EDGE_SCROLL_DWELL_MS = 400;
+const TARGET_INDEX_HYSTERESIS = 16;
 
 // Sortable necesita registrar el contenedor completo. Este gesto mantiene el
 // FlatList virtualizado y solo anima la página activa y sus destinos locales.
@@ -46,7 +50,9 @@ const LocalPageDragHandle = ({
   context,
 }: LocalPageDragHandleProps) => {
   const { theme } = useUnistyles();
-  const lastAutoScrollAt = useSharedValue(0);
+  const edgeDirection = useSharedValue<-1 | 0 | 1>(0);
+  const edgeScrollLatched = useSharedValue(false);
+  const edgeDwellProgress = useSharedValue(0);
   const minTargetIndex = Math.max(
     0,
     pageIndex - MAX_LOCAL_PAGE_MOVE
@@ -63,8 +69,6 @@ const LocalPageDragHandle = ({
     overlayTranslateY,
     overlayWidth,
     overlayHeight,
-    scrollOffset,
-    startScrollOffset,
     targetIndex,
     autoScrollAllowed,
     listBounds,
@@ -80,6 +84,14 @@ const LocalPageDragHandle = ({
   } = context;
 
   const gesture = useMemo(() => {
+    const resetEdgeScroll = () => {
+      'worklet';
+      cancelAnimation(edgeDwellProgress);
+      edgeDwellProgress.value = 0;
+      edgeDirection.value = 0;
+      edgeScrollLatched.value = false;
+    };
+
     const dragGesture = Gesture.Pan()
       .activateAfterLongPress(ACTIVATION_DELAY_MS)
       .shouldCancelWhenOutside(false)
@@ -95,9 +107,9 @@ const LocalPageDragHandle = ({
         overlayTranslateY.value = 0;
         overlayWidth.value = row.width;
         overlayHeight.value = row.height;
-        startScrollOffset.value = scrollOffset.value;
         targetIndex.value = pageIndex;
         autoScrollAllowed.value = false;
+        resetEdgeScroll();
         listBounds.value = {
           x: viewport.pageX,
           y: viewport.pageY,
@@ -144,17 +156,20 @@ const LocalPageDragHandle = ({
           event.translationY,
           maximumTranslateY
         );
-        if (outcome !== 'commitLocal') return;
+        if (outcome !== 'commitLocal') {
+          resetEdgeScroll();
+          return;
+        }
 
-        const scrollDelta = scrollOffset.value - startScrollOffset.value;
-        const logicalMovement = event.translationY + scrollDelta;
-        const proposedIndex = Math.round(
-          pageIndex + logicalMovement / DOCUMENT_PAGE_ITEM_EXTENT
-        );
-        const nextIndex = Math.min(
+        const nextIndex = resolveLocalTargetIndex({
+          movement: event.translationY,
+          originalIndex: pageIndex,
+          currentIndex: targetIndex.value,
+          minTargetIndex,
           maxTargetIndex,
-          Math.max(minTargetIndex, proposedIndex)
-        );
+          itemExtent: DOCUMENT_PAGE_ITEM_EXTENT,
+          hysteresis: TARGET_INDEX_HYSTERESIS,
+        });
         if (nextIndex !== targetIndex.value) {
           targetIndex.value = nextIndex;
           scheduleOnRN(
@@ -164,13 +179,6 @@ const LocalPageDragHandle = ({
           );
         }
 
-        const now = Date.now();
-        if (
-          now - lastAutoScrollAt.value <
-          AUTO_SCROLL_THROTTLE_MS
-        ) {
-          return;
-        }
         const autoScrollDirection = resolveLocalAutoScrollDirection({
           y: event.absoluteY,
           listBounds: listBounds.value,
@@ -180,10 +188,36 @@ const LocalPageDragHandle = ({
           maxTargetIndex,
           edgeThreshold: EDGE_SCROLL_THRESHOLD,
         });
-        if (autoScrollDirection !== 0) {
-          lastAutoScrollAt.value = now;
-          scheduleOnRN(onAutoScroll, autoScrollDirection);
+        if (autoScrollDirection === 0) {
+          resetEdgeScroll();
+          return;
         }
+        if (
+          edgeScrollLatched.value ||
+          edgeDirection.value === autoScrollDirection
+        ) {
+          return;
+        }
+
+        cancelAnimation(edgeDwellProgress);
+        edgeDwellProgress.value = 0;
+        edgeDirection.value = autoScrollDirection;
+        edgeDwellProgress.value = withTiming(
+          1,
+          { duration: EDGE_SCROLL_DWELL_MS },
+          finished => {
+            if (
+              !finished ||
+              !dragActive.value ||
+              !autoScrollAllowed.value ||
+              edgeDirection.value !== autoScrollDirection
+            ) {
+              return;
+            }
+            edgeScrollLatched.value = true;
+            scheduleOnRN(onAutoScroll, autoScrollDirection);
+          }
+        );
       })
       .onEnd(event => {
         'worklet';
@@ -197,6 +231,7 @@ const LocalPageDragHandle = ({
           dropBarHeight: dropBarHeight.value,
         });
         const finalIndex = targetIndex.value;
+        resetEdgeScroll();
         dragActive.value = false;
         autoScrollAllowed.value = false;
         hoverTarget.value = LOCAL_DROP_TARGET.none;
@@ -207,6 +242,7 @@ const LocalPageDragHandle = ({
       .onFinalize((_event, success) => {
         'worklet';
         if (success || !dragActive.value) return;
+        resetEdgeScroll();
         dragActive.value = false;
         autoScrollAllowed.value = false;
         hoverTarget.value = LOCAL_DROP_TARGET.none;
@@ -235,8 +271,10 @@ const LocalPageDragHandle = ({
     dragActive,
     dragLayerRef,
     dropBarHeight,
+    edgeDirection,
+    edgeDwellProgress,
+    edgeScrollLatched,
     hoverTarget,
-    lastAutoScrollAt,
     layerBounds,
     listBounds,
     listViewportRef,
@@ -255,8 +293,6 @@ const LocalPageDragHandle = ({
     overlayWidth,
     pageId,
     rowRef,
-    scrollOffset,
-    startScrollOffset,
     targetIndex,
     thumbnailUri,
   ]);

@@ -50,8 +50,6 @@ export type LocalPageDragContext = {
   overlayTranslateY: SharedValue<number>;
   overlayWidth: SharedValue<number>;
   overlayHeight: SharedValue<number>;
-  scrollOffset: SharedValue<number>;
-  startScrollOffset: SharedValue<number>;
   targetIndex: SharedValue<number>;
   autoScrollAllowed: SharedValue<boolean>;
   listBounds: SharedValue<LocalDragBounds | null>;
@@ -85,7 +83,6 @@ type UseLocalPageDragInput = {
   onRequestMoveToPosition: (pageId: string) => void;
 };
 
-const AUTO_SCROLL_STEP = 32;
 const HIGHLIGHT_DURATION_MS = 700;
 
 export const useLocalPageDrag = ({
@@ -123,8 +120,6 @@ export const useLocalPageDrag = ({
   const overlayTranslateY = useSharedValue(0);
   const overlayWidth = useSharedValue(0);
   const overlayHeight = useSharedValue(DOCUMENT_PAGE_CARD_HEIGHT);
-  const scrollOffset = useSharedValue(0);
-  const startScrollOffset = useSharedValue(0);
   const targetIndex = useSharedValue(0);
   const autoScrollAllowed = useSharedValue(false);
   const listBounds = useSharedValue<LocalDragBounds | null>(null);
@@ -225,19 +220,19 @@ export const useLocalPageDrag = ({
         localMaxOffset,
         Math.max(
           localMinOffset,
-          scrollOffsetRef.current + direction * AUTO_SCROLL_STEP
+          scrollOffsetRef.current +
+            direction * DOCUMENT_PAGE_ITEM_EXTENT
         )
       );
       if (nextOffset === scrollOffsetRef.current) return;
 
       scrollOffsetRef.current = nextOffset;
-      scrollOffset.value = nextOffset;
       listRef.current?.scrollToOffset({
         offset: nextOffset,
-        animated: false,
+        animated: true,
       });
     },
-    [autoScrollAllowed, contentPadding, scrollOffset]
+    [autoScrollAllowed, contentPadding]
   );
 
   const showMovedPage = useCallback((pageId: string, index: number) => {
@@ -301,8 +296,6 @@ export const useLocalPageDrag = ({
       overlayTranslateY,
       overlayWidth,
       overlayHeight,
-      scrollOffset,
-      startScrollOffset,
       targetIndex,
       autoScrollAllowed,
       listBounds,
@@ -335,19 +328,15 @@ export const useLocalPageDrag = ({
       overlayTranslateY,
       overlayWidth,
       requestMoveToPosition,
-      scrollOffset,
-      startScrollOffset,
       targetIndex,
     ]
   );
 
   const handleListScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const nextOffset = event.nativeEvent.contentOffset.y;
-      scrollOffsetRef.current = nextOffset;
-      scrollOffset.value = nextOffset;
+      scrollOffsetRef.current = event.nativeEvent.contentOffset.y;
     },
-    [scrollOffset]
+    []
   );
 
   const handleListLayout = useCallback((event: LayoutChangeEvent) => {

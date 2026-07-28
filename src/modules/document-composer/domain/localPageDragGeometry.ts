@@ -48,6 +48,16 @@ type ResolveLocalPageShiftInput = {
   itemExtent: number;
 };
 
+type ResolveLocalTargetIndexInput = {
+  movement: number;
+  originalIndex: number;
+  currentIndex: number;
+  minTargetIndex: number;
+  maxTargetIndex: number;
+  itemExtent: number;
+  hysteresis: number;
+};
+
 const isFiniteNumber = (value: number) => {
   'worklet';
   return Number.isFinite(value);
@@ -173,6 +183,56 @@ export const resolveLocalAutoScrollDirection = ({
     return 1;
   }
   return 0;
+};
+
+export const resolveLocalTargetIndex = ({
+  movement,
+  originalIndex,
+  currentIndex,
+  minTargetIndex,
+  maxTargetIndex,
+  itemExtent,
+  hysteresis,
+}: ResolveLocalTargetIndexInput) => {
+  'worklet';
+  if (
+    !isFiniteNumber(movement) ||
+    !Number.isInteger(originalIndex) ||
+    !Number.isInteger(currentIndex) ||
+    !Number.isInteger(minTargetIndex) ||
+    !Number.isInteger(maxTargetIndex) ||
+    minTargetIndex > maxTargetIndex ||
+    !isFiniteNumber(itemExtent) ||
+    itemExtent <= 0 ||
+    !isFiniteNumber(hysteresis) ||
+    hysteresis < 0
+  ) {
+    return currentIndex;
+  }
+
+  const proposedIndex = Math.min(
+    maxTargetIndex,
+    Math.max(
+      minTargetIndex,
+      Math.round(originalIndex + movement / itemExtent)
+    )
+  );
+  if (proposedIndex === currentIndex) return currentIndex;
+
+  const boundary =
+    proposedIndex > currentIndex
+      ? (proposedIndex - originalIndex - 0.5) * itemExtent +
+        hysteresis
+      : (proposedIndex - originalIndex + 0.5) * itemExtent -
+        hysteresis;
+
+  return proposedIndex > currentIndex
+    ? movement >= boundary
+      ? proposedIndex
+      : currentIndex
+    : movement <= boundary
+      ? proposedIndex
+      : currentIndex;
 };
 
 export const resolveLocalPageShift = ({

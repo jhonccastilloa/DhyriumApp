@@ -134,4 +134,22 @@ describe('useLocalPageDrag completion state', () => {
     expect(onMoveToPosition).not.toHaveBeenCalled();
     expect(result.current.dragSession).toBeUndefined();
   });
+
+  it('does not change the provisional destination during autoscroll', async () => {
+    const source = pages(12);
+    const { result, onCommit } = await renderLocalPageDrag(source);
+
+    await act(() => {
+      result.current.dragContext.onStart('page-6', 5);
+    });
+    await act(() => {
+      result.current.dragContext.targetIndex.value = 6;
+      result.current.dragContext.autoScrollAllowed.value = true;
+      result.current.dragContext.onAutoScroll(1);
+    });
+
+    expect(result.current.dragContext.targetIndex.value).toBe(6);
+    expect(result.current.dragSession?.draftIndex).toBe(5);
+    expect(onCommit).not.toHaveBeenCalled();
+  });
 });
