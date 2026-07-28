@@ -9,16 +9,15 @@ import Animated, {
 import { scheduleOnRN } from 'react-native-worklets';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import AppIcon from '@/components/icons/AppIcon';
-import {
-  DOCUMENT_PAGE_ITEM_EXTENT,
-} from '../constants/documentComposerLayout';
-import { MAX_LOCAL_PAGE_MOVE } from '../domain/pageOrder';
+import { DOCUMENT_PAGE_ITEM_EXTENT } from '../constants/documentComposerLayout';
 import {
   LOCAL_DROP_TARGET,
-  type LocalDropTarget,
-  type LocalPageDragContext,
-  type LocalPageDragOutcome,
-} from '../hooks/useLocalPageDrag';
+  resolveLocalAutoScrollDirection,
+  resolveLocalDragOutcome,
+  resolveLocalDropTarget,
+} from '../domain/localPageDragGeometry';
+import { MAX_LOCAL_PAGE_MOVE } from '../domain/pageOrder';
+import type { LocalPageDragContext } from '../hooks/useLocalPageDrag';
 
 type LocalPageDragHandleProps = {
   pageId: string;
@@ -31,43 +30,12 @@ type LocalPageDragHandleProps = {
 };
 
 const ACTIVATION_DELAY_MS = 220;
+const TAP_MAX_DURATION_MS = ACTIVATION_DELAY_MS;
 const EDGE_SCROLL_THRESHOLD = 56;
 const AUTO_SCROLL_THROTTLE_MS = 80;
 
 // Sortable necesita registrar el contenedor completo. Este gesto mantiene el
 // FlatList virtualizado y solo anima la página activa y sus destinos locales.
-const containsPoint = (
-  x: number,
-  y: number,
-  ref: AnimatedRef<View>
-) => {
-  'worklet';
-  const bounds = measure(ref);
-  return Boolean(
-    bounds &&
-      x >= bounds.pageX &&
-      x <= bounds.pageX + bounds.width &&
-      y >= bounds.pageY &&
-      y <= bounds.pageY + bounds.height
-  );
-};
-
-const getDropTarget = (
-  x: number,
-  y: number,
-  moveTargetRef: AnimatedRef<View>,
-  cancelTargetRef: AnimatedRef<View>
-): LocalDropTarget => {
-  'worklet';
-  if (containsPoint(x, y, moveTargetRef)) {
-    return LOCAL_DROP_TARGET.moveToPosition;
-  }
-  if (containsPoint(x, y, cancelTargetRef)) {
-    return LOCAL_DROP_TARGET.cancel;
-  }
-  return LOCAL_DROP_TARGET.none;
-};
-
 const LocalPageDragHandle = ({
   pageId,
   pageOrder,
@@ -98,18 +66,21 @@ const LocalPageDragHandle = ({
     scrollOffset,
     startScrollOffset,
     targetIndex,
+    autoScrollAllowed,
+    listBounds,
+    layerBounds,
+    dropBarHeight,
     dragLayerRef,
     listViewportRef,
-    moveTargetRef,
-    cancelTargetRef,
     onStart,
     onDraftIndexChange,
     onAutoScroll,
     onFinish,
+    onRequestMoveToPosition,
   } = context;
 
   const gesture = useMemo(() => {
-    return Gesture.Pan()
+    const dragGesture = Gesture.Pan()
       .activateAfterLongPress(ACTIVATION_DELAY_MS)
       .shouldCancelWhenOutside(false)
       .onStart(() => {
@@ -126,6 +97,19 @@ const LocalPageDragHandle = ({
         overlayHeight.value = row.height;
         startScrollOffset.value = scrollOffset.value;
         targetIndex.value = pageIndex;
+        autoScrollAllowed.value = false;
+        listBounds.value = {
+          x: viewport.pageX,
+          y: viewport.pageY,
+          width: viewport.width,
+          height: viewport.height,
+        };
+        layerBounds.value = {
+          x: layer.pageX,
+          y: layer.pageY,
+          width: layer.width,
+          height: layer.height,
+        };
         hoverTarget.value = LOCAL_DROP_TARGET.none;
         dragActive.value = true;
         scheduleOnRN(
@@ -139,7 +123,29 @@ const LocalPageDragHandle = ({
         'worklet';
         if (!dragActive.value) return;
 
-        overlayTranslateY.value = event.translationY;
+        const geometry = {
+          x: event.absoluteX,
+          y: event.absoluteY,
+          listBounds: listBounds.value,
+          layerBounds: layerBounds.value,
+          dropBarHeight: dropBarHeight.value,
+        };
+        const outcome = resolveLocalDragOutcome(geometry);
+        hoverTarget.value = resolveLocalDropTarget(geometry);
+        autoScrollAllowed.value = outcome === 'commitLocal';
+
+        const maximumTranslateY = layerBounds.value
+          ? layerBounds.value.height -
+            dropBarHeight.value -
+            overlayHeight.value -
+            overlayOriginY.value
+          : event.translationY;
+        overlayTranslateY.value = Math.min(
+          event.translationY,
+          maximumTranslateY
+        );
+        if (outcome !== 'commitLocal') return;
+
         const scrollDelta = scrollOffset.value - startScrollOffset.value;
         const logicalMovement = event.translationY + scrollDelta;
         const proposedIndex = Math.round(
@@ -158,21 +164,6 @@ const LocalPageDragHandle = ({
           );
         }
 
-        hoverTarget.value = getDropTarget(
-          event.absoluteX,
-          event.absoluteY,
-          moveTargetRef,
-          cancelTargetRef
-        );
-
-        const viewport = measure(listViewportRef);
-        if (
-          !viewport ||
-          hoverTarget.value !== LOCAL_DROP_TARGET.none
-        ) {
-          return;
-        }
-
         const now = Date.now();
         if (
           now - lastAutoScrollAt.value <
@@ -180,48 +171,47 @@ const LocalPageDragHandle = ({
         ) {
           return;
         }
-        if (
-          event.absoluteY <= viewport.pageY + EDGE_SCROLL_THRESHOLD &&
-          targetIndex.value > minTargetIndex
-        ) {
+        const autoScrollDirection = resolveLocalAutoScrollDirection({
+          y: event.absoluteY,
+          listBounds: listBounds.value,
+          outcome,
+          targetIndex: targetIndex.value,
+          minTargetIndex,
+          maxTargetIndex,
+          edgeThreshold: EDGE_SCROLL_THRESHOLD,
+        });
+        if (autoScrollDirection !== 0) {
           lastAutoScrollAt.value = now;
-          scheduleOnRN(onAutoScroll, -1);
-        } else if (
-          event.absoluteY >=
-            viewport.pageY + viewport.height - EDGE_SCROLL_THRESHOLD &&
-          targetIndex.value < maxTargetIndex
-        ) {
-          lastAutoScrollAt.value = now;
-          scheduleOnRN(onAutoScroll, 1);
+          scheduleOnRN(onAutoScroll, autoScrollDirection);
         }
       })
       .onEnd(event => {
         'worklet';
         if (!dragActive.value) return;
 
-        const dropTarget = getDropTarget(
-          event.absoluteX,
-          event.absoluteY,
-          moveTargetRef,
-          cancelTargetRef
-        );
-        let outcome: LocalPageDragOutcome = 'commitLocal';
-        if (dropTarget === LOCAL_DROP_TARGET.moveToPosition) {
-          outcome = 'moveToPosition';
-        } else if (dropTarget === LOCAL_DROP_TARGET.cancel) {
-          outcome = 'cancel';
-        }
-
+        const outcome = resolveLocalDragOutcome({
+          x: event.absoluteX,
+          y: event.absoluteY,
+          listBounds: listBounds.value,
+          layerBounds: layerBounds.value,
+          dropBarHeight: dropBarHeight.value,
+        });
         const finalIndex = targetIndex.value;
         dragActive.value = false;
+        autoScrollAllowed.value = false;
         hoverTarget.value = LOCAL_DROP_TARGET.none;
+        listBounds.value = null;
+        layerBounds.value = null;
         scheduleOnRN(onFinish, pageId, finalIndex, outcome);
       })
       .onFinalize((_event, success) => {
         'worklet';
         if (success || !dragActive.value) return;
         dragActive.value = false;
+        autoScrollAllowed.value = false;
         hoverTarget.value = LOCAL_DROP_TARGET.none;
+        listBounds.value = null;
+        layerBounds.value = null;
         scheduleOnRN(
           onFinish,
           pageId,
@@ -229,19 +219,33 @@ const LocalPageDragHandle = ({
           'cancel'
         );
       });
+
+    const tapGesture = Gesture.Tap()
+      .maxDuration(TAP_MAX_DURATION_MS)
+      .onEnd((_event, success) => {
+        'worklet';
+        if (success) {
+          scheduleOnRN(onRequestMoveToPosition, pageId);
+        }
+      });
+
+    return Gesture.Exclusive(dragGesture, tapGesture);
   }, [
-    cancelTargetRef,
+    autoScrollAllowed,
     dragActive,
     dragLayerRef,
+    dropBarHeight,
     hoverTarget,
     lastAutoScrollAt,
+    layerBounds,
+    listBounds,
     listViewportRef,
     maxTargetIndex,
     minTargetIndex,
-    moveTargetRef,
     onAutoScroll,
     onDraftIndexChange,
     onFinish,
+    onRequestMoveToPosition,
     onStart,
     pageIndex,
     overlayHeight,

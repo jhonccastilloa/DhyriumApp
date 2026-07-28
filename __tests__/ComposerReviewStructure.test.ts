@@ -14,7 +14,10 @@ describe('ComposerReview reorder structure', () => {
     'src/modules/document-composer/components/LocalDraggablePageListItem.tsx',
     'src/modules/document-composer/components/LocalPageDragHandle.tsx',
     'src/modules/document-composer/components/LocalPageDragLayer.tsx',
+    'src/modules/document-composer/hooks/useLocalPageDrag.ts',
+    'src/modules/document-composer/domain/localPageDragGeometry.ts',
   ].map(readSource);
+  const dragHandle = localDragSources[1];
 
   it('keeps the main document virtualized with FlatList', () => {
     expect(reviewScreen).toContain('<FlatList');
@@ -33,5 +36,14 @@ describe('ComposerReview reorder structure', () => {
     expect(
       [reviewScreen, ...localDragSources].join('\n')
     ).not.toContain('PdfView');
+  });
+
+  it('composes short tap after the long-press drag gesture', () => {
+    expect(dragHandle).toContain(
+      'Gesture.Exclusive(dragGesture, tapGesture)'
+    );
+    expect(dragHandle).toContain(
+      'scheduleOnRN(onRequestMoveToPosition, pageId)'
+    );
   });
 });

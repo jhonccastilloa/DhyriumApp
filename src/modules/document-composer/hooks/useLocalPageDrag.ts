@@ -22,22 +22,16 @@ import {
   DOCUMENT_PAGE_CARD_GAP,
   DOCUMENT_PAGE_CARD_HEIGHT,
   DOCUMENT_PAGE_ITEM_EXTENT,
+  LOCAL_PAGE_DROP_BAR_HEIGHT,
 } from '../constants/documentComposerLayout';
+import {
+  LOCAL_DROP_TARGET,
+  type LocalDragBounds,
+  type LocalDropTarget,
+  type LocalPageDragOutcome,
+} from '../domain/localPageDragGeometry';
 import { getNearbyPages } from '../domain/pageOrder';
 import type { ComposerPage } from '../types/documentComposer.types';
-
-export const LOCAL_DROP_TARGET = {
-  none: 0,
-  moveToPosition: 1,
-  cancel: 2,
-} as const;
-
-export type LocalDropTarget =
-  (typeof LOCAL_DROP_TARGET)[keyof typeof LOCAL_DROP_TARGET];
-export type LocalPageDragOutcome =
-  | 'commitLocal'
-  | 'moveToPosition'
-  | 'cancel';
 
 export type LocalPageDragSession = {
   pageId: string;
@@ -59,10 +53,12 @@ export type LocalPageDragContext = {
   scrollOffset: SharedValue<number>;
   startScrollOffset: SharedValue<number>;
   targetIndex: SharedValue<number>;
+  autoScrollAllowed: SharedValue<boolean>;
+  listBounds: SharedValue<LocalDragBounds | null>;
+  layerBounds: SharedValue<LocalDragBounds | null>;
+  dropBarHeight: SharedValue<number>;
   dragLayerRef: AnimatedRef<View>;
   listViewportRef: AnimatedRef<View>;
-  moveTargetRef: AnimatedRef<View>;
-  cancelTargetRef: AnimatedRef<View>;
   onStart: (
     pageId: string,
     originalIndex: number,
@@ -130,10 +126,12 @@ export const useLocalPageDrag = ({
   const scrollOffset = useSharedValue(0);
   const startScrollOffset = useSharedValue(0);
   const targetIndex = useSharedValue(0);
+  const autoScrollAllowed = useSharedValue(false);
+  const listBounds = useSharedValue<LocalDragBounds | null>(null);
+  const layerBounds = useSharedValue<LocalDragBounds | null>(null);
+  const dropBarHeight = useSharedValue(LOCAL_PAGE_DROP_BAR_HEIGHT);
   const dragLayerRef = useAnimatedRef<View>();
   const listViewportRef = useAnimatedRef<View>();
-  const moveTargetRef = useAnimatedRef<View>();
-  const cancelTargetRef = useAnimatedRef<View>();
 
   const handleStart = useCallback(
     (
@@ -186,7 +184,13 @@ export const useLocalPageDrag = ({
       const current = dragSessionRef.current;
       const currentPages = pagesRef.current;
       const viewportHeight = viewportHeightRef.current;
-      if (!current || viewportHeight <= 0) return;
+      if (
+        !current ||
+        !autoScrollAllowed.value ||
+        viewportHeight <= 0
+      ) {
+        return;
+      }
 
       const firstWindowIndex = currentPages.findIndex(
         page => page.id === current.windowPageIds[0]
@@ -233,7 +237,7 @@ export const useLocalPageDrag = ({
         animated: false,
       });
     },
-    [contentPadding, scrollOffset]
+    [autoScrollAllowed, contentPadding, scrollOffset]
   );
 
   const showMovedPage = useCallback((pageId: string, index: number) => {
@@ -300,10 +304,12 @@ export const useLocalPageDrag = ({
       scrollOffset,
       startScrollOffset,
       targetIndex,
+      autoScrollAllowed,
+      listBounds,
+      layerBounds,
+      dropBarHeight,
       dragLayerRef,
       listViewportRef,
-      moveTargetRef,
-      cancelTargetRef,
       onStart: handleStart,
       onDraftIndexChange: handleDraftIndexChange,
       onAutoScroll: handleAutoScroll,
@@ -311,16 +317,18 @@ export const useLocalPageDrag = ({
       onRequestMoveToPosition: requestMoveToPosition,
     }),
     [
-      cancelTargetRef,
+      autoScrollAllowed,
       dragActive,
       dragLayerRef,
+      dropBarHeight,
       handleAutoScroll,
       handleDraftIndexChange,
       handleFinish,
       handleStart,
       hoverTarget,
+      layerBounds,
+      listBounds,
       listViewportRef,
-      moveTargetRef,
       overlayHeight,
       overlayOriginX,
       overlayOriginY,

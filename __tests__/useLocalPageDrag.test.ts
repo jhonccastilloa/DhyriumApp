@@ -1,4 +1,5 @@
 import { act, renderHook } from '@testing-library/react-native';
+import { resolveLocalDragOutcome } from '@/modules/document-composer/domain/localPageDragGeometry';
 import { useLocalPageDrag } from '@/modules/document-composer/hooks/useLocalPageDrag';
 import type { ComposerPage } from '@/modules/document-composer/types/documentComposer.types';
 
@@ -66,11 +67,16 @@ describe('useLocalPageDrag completion state', () => {
   it('cancels without committing or changing the source pages', async () => {
     const source = pages(12);
     const sourceIds = source.map(item => item.id);
+    const sourceReferences = [...source];
     const { result, onCommit, onMoveToPosition } =
       await renderLocalPageDrag(source);
 
     await act(() => {
       result.current.dragContext.onStart('page-6', 5);
+    });
+    expect(result.current.dragSession?.page).toBe(source[5]);
+
+    await act(() => {
       result.current.dragContext.onDraftIndexChange('page-6', 7);
       result.current.dragContext.onFinish('page-6', 7, 'cancel');
     });
@@ -78,6 +84,11 @@ describe('useLocalPageDrag completion state', () => {
     expect(onCommit).not.toHaveBeenCalled();
     expect(onMoveToPosition).not.toHaveBeenCalled();
     expect(source.map(item => item.id)).toEqual(sourceIds);
+    expect(source).toEqual(sourceReferences);
+    source.forEach((item, index) => {
+      expect(item).toBe(sourceReferences[index]);
+    });
+    expect(result.current.dragSession).toBeUndefined();
   });
 
   it('opens move to position without applying the local draft', async () => {
@@ -98,5 +109,29 @@ describe('useLocalPageDrag completion state', () => {
     expect(onCommit).not.toHaveBeenCalled();
     expect(onMoveToPosition).toHaveBeenCalledTimes(1);
     expect(onMoveToPosition).toHaveBeenCalledWith('page-6');
+  });
+
+  it('treats invalid drop geometry as cancel and never commits', async () => {
+    const source = pages(12);
+    const { result, onCommit, onMoveToPosition } =
+      await renderLocalPageDrag(source);
+    const outcome = resolveLocalDragOutcome({
+      x: Number.NaN,
+      y: 300,
+      listBounds: null,
+      layerBounds: null,
+      dropBarHeight: 72,
+    });
+
+    await act(() => {
+      result.current.dragContext.onStart('page-6', 5);
+      result.current.dragContext.onDraftIndexChange('page-6', 7);
+      result.current.dragContext.onFinish('page-6', 7, outcome);
+    });
+
+    expect(outcome).toBe('cancel');
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(onMoveToPosition).not.toHaveBeenCalled();
+    expect(result.current.dragSession).toBeUndefined();
   });
 });

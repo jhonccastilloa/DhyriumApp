@@ -1,18 +1,18 @@
-import type { View } from 'react-native';
-import Animated, {
-  useAnimatedStyle,
-  type AnimatedRef,
-} from 'react-native-reanimated';
+import { useEffect } from 'react';
+import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import AppIcon from '@/components/icons/AppIcon';
 import AppFlex from '@/components/layout/AppFlex';
 import AppText from '@/components/typography/AppText';
+import { LOCAL_PAGE_DROP_BAR_HEIGHT } from '../constants/documentComposerLayout';
 import {
   LOCAL_DROP_TARGET,
   type LocalDropTarget,
-  type LocalPageDragContext,
-  type LocalPageDragSession,
+} from '../domain/localPageDragGeometry';
+import type {
+  LocalPageDragContext,
+  LocalPageDragSession,
 } from '../hooks/useLocalPageDrag';
 import DocumentPageThumbnail from './DocumentPageThumbnail';
 
@@ -24,13 +24,11 @@ type LocalPageDragLayerProps = {
 type LocalPageDropTargetProps = {
   context: LocalPageDragContext;
   target: LocalDropTarget;
-  targetRef: AnimatedRef<View>;
 };
 
 const LocalPageDropTarget = ({
   context,
   target,
-  targetRef,
 }: LocalPageDropTargetProps) => {
   const { theme } = useUnistyles();
   const isCancel = target === LOCAL_DROP_TARGET.cancel;
@@ -47,14 +45,20 @@ const LocalPageDropTarget = ({
       borderColor: active
         ? accentColor
         : theme.colors.border.subtle,
+      backgroundColor: active
+        ? isCancel
+          ? theme.colors.surface.status.error
+          : theme.colors.navigation.rail
+        : theme.colors.surface.background.elements,
       transform: [{ scale: active ? 1.02 : 1 }],
     };
   });
+  const hintStyle = useAnimatedStyle(() => ({
+    opacity: context.hoverTarget.value === target ? 1 : 0,
+  }));
 
   return (
     <Animated.View
-      ref={targetRef}
-      collapsable={false}
       style={[styles.dropTarget, animatedStyle]}
     >
       <AppIcon
@@ -62,13 +66,26 @@ const LocalPageDropTarget = ({
         size={isCancel ? 19 : 20}
         mColor={accentColor}
       />
-      <AppText
-        variant="text.sm.bold"
-        color={isCancel ? 'error' : 'link'}
-        numberOfLines={1}
-      >
-        {isCancel ? 'Cancelar' : 'Mover a posición…'}
-      </AppText>
+      <AppFlex flex={1} align="center">
+        <AppText
+          variant="text.sm.bold"
+          color={isCancel ? 'error' : 'link'}
+          numberOfLines={1}
+        >
+          {isCancel ? 'Cancelar' : 'Mover a posición…'}
+        </AppText>
+        <Animated.View style={hintStyle}>
+          <AppText
+            variant="text.xs.regular"
+            color={isCancel ? 'error' : 'link'}
+            numberOfLines={1}
+          >
+            {isCancel
+              ? 'Suelta para cancelar'
+              : 'Suelta para mover a posición'}
+          </AppText>
+        </Animated.View>
+      </AppFlex>
     </Animated.View>
   );
 };
@@ -79,6 +96,11 @@ const LocalPageDragLayer = ({
 }: LocalPageDragLayerProps) => {
   const { theme } = useUnistyles();
   const insets = useSafeAreaInsets();
+  const dropBarHeight =
+    LOCAL_PAGE_DROP_BAR_HEIGHT + insets.bottom;
+  useEffect(() => {
+    context.dropBarHeight.value = dropBarHeight;
+  }, [context.dropBarHeight, dropBarHeight]);
   const overlayStyle = useAnimatedStyle(() => ({
     width: context.overlayWidth.value,
     height: context.overlayHeight.value,
@@ -168,18 +190,19 @@ const LocalPageDragLayer = ({
             p="sm"
             style={[
               styles.dropBar,
-              { paddingBottom: Math.max(insets.bottom, theme.spacing.sm) },
+              {
+                height: dropBarHeight,
+                paddingBottom: insets.bottom + theme.spacing.sm,
+              },
             ]}
           >
             <LocalPageDropTarget
               context={context}
               target={LOCAL_DROP_TARGET.cancel}
-              targetRef={context.cancelTargetRef}
             />
             <LocalPageDropTarget
               context={context}
               target={LOCAL_DROP_TARGET.moveToPosition}
-              targetRef={context.moveTargetRef}
             />
           </AppFlex>
         </>
@@ -223,7 +246,6 @@ const styles = StyleSheet.create(theme => ({
     left: 0,
     right: 0,
     bottom: 0,
-    minHeight: 72,
     backgroundColor: theme.colors.surface.background.cards,
     borderTopWidth: theme.border.hairline,
     borderTopColor: theme.colors.border.strong,
@@ -239,7 +261,6 @@ const styles = StyleSheet.create(theme => ({
     justifyContent: 'center',
     gap: theme.spacing.xs,
     borderRadius: theme.radius.sm,
-    backgroundColor: theme.colors.surface.background.elements,
   },
 }));
 
