@@ -46,4 +46,17 @@ describe('ComposerReview reorder structure', () => {
       'scheduleOnRN(onRequestMoveToPosition, pageId)'
     );
   });
+
+  it('replaces normal footer actions with one full-width drag target', () => {
+    const dragLayer = localDragSources[2];
+
+    expect(reviewScreen).toContain(
+      "pointerEvents={isDragging ? 'none' : 'auto'}"
+    );
+    expect(reviewScreen).toContain(
+      'isDragging && styles.hiddenActions'
+    );
+    expect(dragLayer).toContain('Mover a otra posición');
+    expect(dragLayer).not.toContain('Suelta para cancelar');
+  });
 });

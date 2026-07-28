@@ -20,19 +20,19 @@ describe('local page drag geometry', () => {
     expect(resolveLocalDragOutcome(geometry)).toBe('commitLocal');
   });
 
-  it('resolves the full left and right halves of the bottom bar', () => {
+  it('resolves the full bottom area as move to position', () => {
     expect(
       resolveLocalDragOutcome({ ...geometry, x: 100, y: 750 })
-    ).toBe('cancel');
+    ).toBe('moveToPosition');
     expect(
       resolveLocalDragOutcome({ ...geometry, x: 300, y: 750 })
     ).toBe('moveToPosition');
   });
 
-  it('never treats the visual center of the bottom bar as a local commit', () => {
+  it('never treats any bottom-area boundary as a local commit', () => {
     expect(
       resolveLocalDragOutcome({ ...geometry, x: 199.9, y: 720 })
-    ).toBe('cancel');
+    ).toBe('moveToPosition');
     expect(
       resolveLocalDragOutcome({ ...geometry, x: 200, y: 720 })
     ).toBe('moveToPosition');
@@ -93,7 +93,7 @@ describe('local page drag autoscroll', () => {
     edgeThreshold: 56,
   };
 
-  it('stops over both actions in the bottom bar', () => {
+  it('stops over the move-to-position action', () => {
     expect(
       resolveLocalAutoScrollDirection({
         ...input,

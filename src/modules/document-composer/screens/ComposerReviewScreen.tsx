@@ -10,6 +10,7 @@ import {
   Pressable,
   TextInput,
   View,
+  type LayoutChangeEvent,
   type ListRenderItem,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -33,6 +34,7 @@ import {
   DOCUMENT_PAGE_CARD_GAP,
   DOCUMENT_PAGE_CARD_HEIGHT,
   DOCUMENT_PAGE_ITEM_EXTENT,
+  LOCAL_PAGE_DROP_AREA_FALLBACK_HEIGHT,
 } from '../constants/documentComposerLayout';
 import DocumentComposerService from '../services/DocumentComposerService';
 import { pickPdfDocument } from '../services/documentPickerService';
@@ -62,6 +64,9 @@ const ComposerReviewScreen = ({ route }: Props) => {
   const started = useRef(false);
   const orderSheetRef = useRef<BottomSheetModal>(null);
   const [orderPageId, setOrderPageId] = useState<string>();
+  const [actionsHeight, setActionsHeight] = useState(
+    LOCAL_PAGE_DROP_AREA_FALLBACK_HEIGHT
+  );
   const session = useDocumentComposerStore(state => state.session);
   const createSession = useDocumentComposerStore(state => state.createSession);
   const setSourcePdf = useDocumentComposerStore(state => state.setSourcePdf);
@@ -93,6 +98,17 @@ const ComposerReviewScreen = ({ route }: Props) => {
     onCommit: applyLocalPageMove,
     onRequestMoveToPosition: requestMoveToPosition,
   });
+  const handleActionsLayout = useCallback(
+    (event: LayoutChangeEvent) => {
+      const height = event.nativeEvent.layout.height;
+      if (!Number.isFinite(height) || height <= 0) return;
+      localDrag.dragContext.dropBarHeight.value = height;
+      setActionsHeight(current =>
+        current === height ? current : height
+      );
+    },
+    [localDrag.dragContext.dropBarHeight]
+  );
 
   const choosePdf = useCallback(async () => {
     const selected = await pickPdfDocument();
@@ -300,6 +316,7 @@ const ComposerReviewScreen = ({ route }: Props) => {
   const orderPage = orderPageId
     ? session.pages.find(page => page.id === orderPageId)
     : undefined;
+  const isDragging = Boolean(localDrag.dragSession);
 
   return (
     <AppFlex flex={1} style={styles.screen}>
@@ -390,7 +407,20 @@ const ComposerReviewScreen = ({ route }: Props) => {
         />
       </Animated.View>
 
-      <AppFlex p="md" gap="sm" style={styles.actions}>
+      <AppFlex
+        p="md"
+        gap="sm"
+        pointerEvents={isDragging ? 'none' : 'auto'}
+        accessibilityElementsHidden={isDragging}
+        importantForAccessibility={
+          isDragging ? 'no-hide-descendants' : 'auto'
+        }
+        onLayout={handleActionsLayout}
+        style={[
+          styles.actions,
+          isDragging && styles.hiddenActions,
+        ]}
+      >
         <AppFlex direction="row" gap="sm">
           <Pressable
             onPress={() => void startScanner(true)}
@@ -456,6 +486,7 @@ const ComposerReviewScreen = ({ route }: Props) => {
       <LocalPageDragLayer
         context={localDrag.dragContext}
         session={localDrag.dragSession}
+        dropAreaHeight={actionsHeight}
       />
     </AppFlex>
   );
@@ -490,6 +521,7 @@ const styles = StyleSheet.create(theme => ({
     borderTopWidth: theme.border.hairline,
     borderTopColor: theme.colors.border.subtle,
   },
+  hiddenActions: { opacity: 0 },
   secondaryButton: {
     minHeight: 42,
     flex: 1,

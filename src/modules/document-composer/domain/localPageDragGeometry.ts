@@ -1,7 +1,6 @@
 export const LOCAL_DROP_TARGET = {
   none: 0,
   moveToPosition: 1,
-  cancel: 2,
 } as const;
 
 export type LocalDropTarget =
@@ -110,7 +109,6 @@ const hasValidGeometry = (
 };
 
 const resolveValidDropTarget = ({
-  x,
   y,
   layerBounds,
   dropBarHeight,
@@ -119,11 +117,7 @@ const resolveValidDropTarget = ({
   const dropBarTop =
     layerBounds.y + layerBounds.height - dropBarHeight;
   if (y < dropBarTop) return LOCAL_DROP_TARGET.none;
-
-  const midpoint = layerBounds.x + layerBounds.width / 2;
-  return x < midpoint
-    ? LOCAL_DROP_TARGET.cancel
-    : LOCAL_DROP_TARGET.moveToPosition;
+  return LOCAL_DROP_TARGET.moveToPosition;
 };
 
 export const resolveLocalDropTarget = (
@@ -142,7 +136,6 @@ export const resolveLocalDragOutcome = (
   if (!hasValidGeometry(input)) return 'cancel';
 
   const dropTarget = resolveValidDropTarget(input);
-  if (dropTarget === LOCAL_DROP_TARGET.cancel) return 'cancel';
   if (dropTarget === LOCAL_DROP_TARGET.moveToPosition) {
     return 'moveToPosition';
   }

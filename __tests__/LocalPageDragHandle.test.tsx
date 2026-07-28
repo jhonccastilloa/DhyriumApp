@@ -252,7 +252,7 @@ describe('LocalPageDragHandle gestures', () => {
     expect(onRequestMoveToPosition).not.toHaveBeenCalled();
   });
 
-  it('freezes the draft and autoscroll throughout the bottom bar', async () => {
+  it('opens move to position from the full bottom area without changing the draft', async () => {
     const {
       context,
       onAutoScroll,
@@ -268,7 +268,9 @@ describe('LocalPageDragHandle gestures', () => {
       });
     });
 
-    expect(context.hoverTarget.value).toBe(LOCAL_DROP_TARGET.cancel);
+    expect(context.hoverTarget.value).toBe(
+      LOCAL_DROP_TARGET.moveToPosition
+    );
     expect(context.targetIndex.value).toBe(5);
     expect(onDraftIndexChange).not.toHaveBeenCalled();
     expect(onAutoScroll).not.toHaveBeenCalled();

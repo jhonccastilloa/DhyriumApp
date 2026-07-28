@@ -22,7 +22,7 @@ import {
   DOCUMENT_PAGE_CARD_GAP,
   DOCUMENT_PAGE_CARD_HEIGHT,
   DOCUMENT_PAGE_ITEM_EXTENT,
-  LOCAL_PAGE_DROP_BAR_HEIGHT,
+  LOCAL_PAGE_DROP_AREA_FALLBACK_HEIGHT,
 } from '../constants/documentComposerLayout';
 import {
   LOCAL_DROP_TARGET,
@@ -124,7 +124,9 @@ export const useLocalPageDrag = ({
   const autoScrollAllowed = useSharedValue(false);
   const listBounds = useSharedValue<LocalDragBounds | null>(null);
   const layerBounds = useSharedValue<LocalDragBounds | null>(null);
-  const dropBarHeight = useSharedValue(LOCAL_PAGE_DROP_BAR_HEIGHT);
+  const dropBarHeight = useSharedValue(
+    LOCAL_PAGE_DROP_AREA_FALLBACK_HEIGHT
+  );
   const dragLayerRef = useAnimatedRef<View>();
   const listViewportRef = useAnimatedRef<View>();
 
