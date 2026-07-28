@@ -1,6 +1,7 @@
 import {
   resolveLocalAutoScrollDirection,
   resolveLocalDragOutcome,
+  resolveLocalPageShift,
 } from '@/modules/document-composer/domain/localPageDragGeometry';
 
 const layerBounds = { x: 0, y: 0, width: 400, height: 800 };
@@ -127,5 +128,33 @@ describe('local page drag autoscroll', () => {
         targetIndex: input.minTargetIndex,
       })
     ).toBe(0);
+  });
+});
+
+describe('local page drag card shifts', () => {
+  const shift = (pageIndex: number, targetIndex: number) =>
+    resolveLocalPageShift({
+      pageIndex,
+      originalIndex: 4,
+      targetIndex,
+      itemExtent: 146,
+    });
+
+  it('moves the placeholder to the provisional slot', () => {
+    expect(shift(4, 6)).toBe(292);
+    expect(shift(4, 2)).toBe(-292);
+  });
+
+  it('shifts crossed cards in the opposite direction', () => {
+    expect(shift(5, 6)).toBe(-146);
+    expect(shift(6, 6)).toBe(-146);
+    expect(shift(2, 2)).toBe(146);
+    expect(shift(3, 2)).toBe(146);
+  });
+
+  it('leaves unrelated cards in place', () => {
+    expect(shift(1, 6)).toBe(0);
+    expect(shift(7, 6)).toBe(0);
+    expect(shift(3, 4)).toBe(0);
   });
 });

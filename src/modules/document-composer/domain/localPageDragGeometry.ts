@@ -41,6 +41,13 @@ type ResolveLocalAutoScrollInput = {
   edgeThreshold: number;
 };
 
+type ResolveLocalPageShiftInput = {
+  pageIndex: number;
+  originalIndex: number;
+  targetIndex: number;
+  itemExtent: number;
+};
+
 const isFiniteNumber = (value: number) => {
   'worklet';
   return Number.isFinite(value);
@@ -164,6 +171,42 @@ export const resolveLocalAutoScrollDirection = ({
     targetIndex < maxTargetIndex
   ) {
     return 1;
+  }
+  return 0;
+};
+
+export const resolveLocalPageShift = ({
+  pageIndex,
+  originalIndex,
+  targetIndex,
+  itemExtent,
+}: ResolveLocalPageShiftInput) => {
+  'worklet';
+  if (
+    !Number.isInteger(pageIndex) ||
+    !Number.isInteger(originalIndex) ||
+    !Number.isInteger(targetIndex) ||
+    !isFiniteNumber(itemExtent) ||
+    itemExtent <= 0
+  ) {
+    return 0;
+  }
+  if (pageIndex === originalIndex) {
+    return (targetIndex - originalIndex) * itemExtent;
+  }
+  if (
+    targetIndex > originalIndex &&
+    pageIndex > originalIndex &&
+    pageIndex <= targetIndex
+  ) {
+    return -itemExtent;
+  }
+  if (
+    targetIndex < originalIndex &&
+    pageIndex >= targetIndex &&
+    pageIndex < originalIndex
+  ) {
+    return itemExtent;
   }
   return 0;
 };

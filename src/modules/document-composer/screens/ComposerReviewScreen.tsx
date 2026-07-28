@@ -251,10 +251,6 @@ const ComposerReviewScreen = ({ route }: Props) => {
     ({ item, index }) => {
       const activeDrag = localDrag.dragSession;
       const isPlaceholder = activeDrag?.pageId === item.id;
-      const isInsertionTarget =
-        activeDrag &&
-        activeDrag.draftIndex !== activeDrag.originalIndex &&
-        activeDrag.draftIndex === index;
       return (
         <LocalDraggablePageListItem
           page={item}
@@ -263,12 +259,9 @@ const ComposerReviewScreen = ({ route }: Props) => {
           artifactId={session?.sourceArtifact?.id}
           isPlaceholder={isPlaceholder}
           isHighlighted={localDrag.highlightedPageId === item.id}
-          insertionEdge={
-            isInsertionTarget
-              ? activeDrag.draftIndex < activeDrag.originalIndex
-                ? 'before'
-                : 'after'
-              : undefined
+          activeOriginalIndex={activeDrag?.originalIndex}
+          placeholderPosition={
+            isPlaceholder ? activeDrag.draftIndex + 1 : undefined
           }
           dragContext={localDrag.dragContext}
           onView={viewPage}

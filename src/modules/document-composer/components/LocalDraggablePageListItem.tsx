@@ -1,9 +1,17 @@
 import { memo } from 'react';
 import { View } from 'react-native';
-import Animated, { useAnimatedRef } from 'react-native-reanimated';
+import Animated, {
+  useAnimatedRef,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
 import { StyleSheet } from 'react-native-unistyles';
 import AppText from '@/components/typography/AppText';
-import { DOCUMENT_PAGE_CARD_HEIGHT } from '../constants/documentComposerLayout';
+import {
+  DOCUMENT_PAGE_CARD_HEIGHT,
+  DOCUMENT_PAGE_ITEM_EXTENT,
+} from '../constants/documentComposerLayout';
+import { resolveLocalPageShift } from '../domain/localPageDragGeometry';
 import { usePageThumbnail } from '../hooks/usePageThumbnail';
 import type { LocalPageDragContext } from '../hooks/useLocalPageDrag';
 import type { ComposerPage } from '../types/documentComposer.types';
@@ -17,7 +25,8 @@ type LocalDraggablePageListItemProps = {
   artifactId?: string;
   isPlaceholder: boolean;
   isHighlighted: boolean;
-  insertionEdge?: 'before' | 'after';
+  activeOriginalIndex?: number;
+  placeholderPosition?: number;
   dragContext: LocalPageDragContext;
   onView: (pageId: string) => void;
   onDelete: (pageId: string) => void;
@@ -30,19 +39,46 @@ const LocalDraggablePageListItem = ({
   artifactId,
   isPlaceholder,
   isHighlighted,
-  insertionEdge,
+  activeOriginalIndex,
+  placeholderPosition,
   dragContext,
   onView,
   onDelete,
 }: LocalDraggablePageListItemProps) => {
   const rowRef = useAnimatedRef<View>();
   const thumbnail = usePageThumbnail(page, artifactId);
+  const shiftStyle = useAnimatedStyle(() => {
+    if (activeOriginalIndex === undefined) {
+      return { transform: [{ translateY: 0 }] };
+    }
+    const translateY = resolveLocalPageShift({
+      pageIndex,
+      originalIndex: activeOriginalIndex,
+      targetIndex: dragContext.targetIndex.value,
+      itemExtent: DOCUMENT_PAGE_ITEM_EXTENT,
+    });
+    return {
+      transform: [
+        {
+          translateY: withSpring(translateY, {
+            damping: 21,
+            stiffness: 250,
+            mass: 0.72,
+          }),
+        },
+      ],
+    };
+  }, [activeOriginalIndex, pageIndex]);
 
   return (
     <Animated.View
       ref={rowRef}
       collapsable={false}
-      style={styles.row}
+      style={[
+        styles.row,
+        isPlaceholder && styles.dragSourceRow,
+        shiftStyle,
+      ]}
     >
       <AppDocumentPageCard
         page={page}
@@ -78,20 +114,10 @@ const LocalDraggablePageListItem = ({
             color="link"
             numberOfLines={1}
           >
-            Página {page.order} se insertará aquí
+            Página {page.order} · posición{' '}
+            {placeholderPosition ?? page.order}
           </AppText>
         </View>
-      ) : null}
-      {insertionEdge ? (
-        <View
-          pointerEvents="none"
-          style={[
-            styles.insertionLine,
-            insertionEdge === 'before'
-              ? styles.insertionLineBefore
-              : styles.insertionLineAfter,
-          ]}
-        />
       ) : null}
     </Animated.View>
   );
@@ -100,6 +126,9 @@ const LocalDraggablePageListItem = ({
 const styles = StyleSheet.create(theme => ({
   row: {
     height: DOCUMENT_PAGE_CARD_HEIGHT,
+  },
+  dragSourceRow: {
+    zIndex: 2,
   },
   hiddenCard: {
     opacity: 0,
@@ -120,21 +149,6 @@ const styles = StyleSheet.create(theme => ({
     borderStyle: 'dashed',
     borderColor: theme.colors.border.focus,
     backgroundColor: theme.colors.navigation.rail,
-  },
-  insertionLine: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    zIndex: 2,
-    height: theme.spacing.xs,
-    borderRadius: theme.radius.pill,
-    backgroundColor: theme.colors.navigation.active,
-  },
-  insertionLineBefore: {
-    top: -theme.spacing.xs,
-  },
-  insertionLineAfter: {
-    bottom: -theme.spacing.xs,
   },
 }));
 
