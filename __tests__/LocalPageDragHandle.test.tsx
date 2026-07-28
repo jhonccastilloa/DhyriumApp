@@ -145,6 +145,8 @@ const createContext = () => {
     overlayTranslateY: shared(0),
     overlayWidth: shared(0),
     overlayHeight: shared(138),
+    overlayOpacity: shared(0),
+    overlayScale: shared(1),
     targetIndex: shared(5),
     autoScrollAllowed: shared(false),
     listBounds: shared<LocalDragBounds | null>(null),
@@ -302,5 +304,30 @@ describe('LocalPageDragHandle gestures', () => {
     });
 
     expect(onAutoScroll).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps the overlay visible while a changed drop settles', async () => {
+    const { context, onFinish } = await renderHandle();
+
+    await act(() => {
+      mockGestureState.pan?.callbacks.onStart?.();
+      mockGestureState.pan?.callbacks.onUpdate?.({
+        absoluteX: 200,
+        absoluteY: 400,
+        translationY: 100,
+      });
+      mockGestureState.pan?.callbacks.onEnd?.({
+        absoluteX: 200,
+        absoluteY: 400,
+      });
+    });
+
+    expect(onFinish).toHaveBeenCalledWith(
+      'page-6',
+      6,
+      'commitLocal'
+    );
+    expect(context.overlayOpacity.value).toBe(1);
+    expect(context.overlayScale.value).toBe(1.02);
   });
 });

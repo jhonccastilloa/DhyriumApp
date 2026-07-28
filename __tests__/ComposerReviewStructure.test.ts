@@ -59,4 +59,18 @@ describe('ComposerReview reorder structure', () => {
     expect(dragLayer).toContain('Mover a otra posición');
     expect(dragLayer).not.toContain('Suelta para cancelar');
   });
+
+  it('keeps the release overlay mounted separately from active row state', () => {
+    const dragHook = localDragSources[3];
+
+    expect(reviewScreen).toContain(
+      'session={localDrag.dragLayerSession}'
+    );
+    expect(dragHook).toContain(
+      'dragLayerSession: dragSession ?? settlingSession'
+    );
+    expect(dragHook).not.toContain(
+      'listRef.current?.scrollToIndex'
+    );
+  });
 });

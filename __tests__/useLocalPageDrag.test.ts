@@ -6,6 +6,7 @@ import type { ComposerPage } from '@/modules/document-composer/types/documentCom
 jest.mock('react-native-reanimated', () => ({
   useAnimatedRef: () => ({ current: null }),
   useSharedValue: (value: unknown) => ({ value }),
+  withTiming: (value: unknown) => value,
 }));
 
 const page = (id: string, order: number): ComposerPage => ({
@@ -44,6 +45,8 @@ describe('useLocalPageDrag completion state', () => {
   it('commits a local draft exactly once with at most nine stable IDs', async () => {
     const source = pages(1000);
     const { result, onCommit } = await renderLocalPageDrag(source);
+    const scrollToIndex = jest.fn();
+    result.current.listRef.current = { scrollToIndex } as never;
 
     await act(() => {
       result.current.dragContext.onStart('page-500', 499);
@@ -62,6 +65,32 @@ describe('useLocalPageDrag completion state', () => {
       'page-500',
       'page-504'
     );
+    expect(scrollToIndex).not.toHaveBeenCalled();
+    expect(result.current.highlightedPageId).toBe('page-500');
+    expect(result.current.dragSession).toBeUndefined();
+    expect(result.current.dragLayerSession?.pageId).toBe('page-500');
+  });
+
+  it('closes an unchanged drop without commit, highlight, or settling', async () => {
+    const source = pages(12);
+    const { result, onCommit } = await renderLocalPageDrag(source);
+    const scrollToIndex = jest.fn();
+    result.current.listRef.current = { scrollToIndex } as never;
+
+    await act(() => {
+      result.current.dragContext.onStart('page-6', 5);
+      result.current.dragContext.onFinish(
+        'page-6',
+        5,
+        'commitLocal'
+      );
+    });
+
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(scrollToIndex).not.toHaveBeenCalled();
+    expect(result.current.highlightedPageId).toBeUndefined();
+    expect(result.current.dragSession).toBeUndefined();
+    expect(result.current.dragLayerSession).toBeUndefined();
   });
 
   it('cancels without committing or changing the source pages', async () => {

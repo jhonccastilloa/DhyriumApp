@@ -95,9 +95,11 @@ const applyResolvedPageRangeOrder = (
 
   const next = [...pages];
   reordered.forEach((page, offset) => {
-    next[range.start + offset] = page;
+    const index = range.start + offset;
+    const order = index + 1;
+    next[index] = page.order === order ? page : { ...page, order };
   });
-  return normalizePageOrder(next);
+  return next;
 };
 
 export const replacePageRangeByIds = (

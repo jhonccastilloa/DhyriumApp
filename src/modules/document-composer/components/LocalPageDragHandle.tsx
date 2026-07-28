@@ -69,6 +69,8 @@ const LocalPageDragHandle = ({
     overlayTranslateY,
     overlayWidth,
     overlayHeight,
+    overlayOpacity,
+    overlayScale,
     targetIndex,
     autoScrollAllowed,
     listBounds,
@@ -107,6 +109,10 @@ const LocalPageDragHandle = ({
         overlayTranslateY.value = 0;
         overlayWidth.value = row.width;
         overlayHeight.value = row.height;
+        cancelAnimation(overlayOpacity);
+        cancelAnimation(overlayScale);
+        overlayOpacity.value = 1;
+        overlayScale.value = 1.02;
         targetIndex.value = pageIndex;
         autoScrollAllowed.value = false;
         resetEdgeScroll();
@@ -231,8 +237,14 @@ const LocalPageDragHandle = ({
           dropBarHeight: dropBarHeight.value,
         });
         const finalIndex = targetIndex.value;
+        const shouldSettle =
+          outcome === 'commitLocal' && finalIndex !== pageIndex;
         resetEdgeScroll();
         dragActive.value = false;
+        if (!shouldSettle) {
+          overlayOpacity.value = 0;
+          overlayScale.value = 1;
+        }
         autoScrollAllowed.value = false;
         hoverTarget.value = LOCAL_DROP_TARGET.none;
         listBounds.value = null;
@@ -244,6 +256,8 @@ const LocalPageDragHandle = ({
         if (success || !dragActive.value) return;
         resetEdgeScroll();
         dragActive.value = false;
+        overlayOpacity.value = 0;
+        overlayScale.value = 1;
         autoScrollAllowed.value = false;
         hoverTarget.value = LOCAL_DROP_TARGET.none;
         listBounds.value = null;
@@ -287,8 +301,10 @@ const LocalPageDragHandle = ({
     onStart,
     pageIndex,
     overlayHeight,
+    overlayOpacity,
     overlayOriginX,
     overlayOriginY,
+    overlayScale,
     overlayTranslateY,
     overlayWidth,
     pageId,

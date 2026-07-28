@@ -316,7 +316,7 @@ const ComposerReviewScreen = ({ route }: Props) => {
   const orderPage = orderPageId
     ? session.pages.find(page => page.id === orderPageId)
     : undefined;
-  const isDragging = Boolean(localDrag.dragSession);
+  const isDragging = Boolean(localDrag.dragLayerSession);
 
   return (
     <AppFlex flex={1} style={styles.screen}>
@@ -485,7 +485,7 @@ const ComposerReviewScreen = ({ route }: Props) => {
       ) : null}
       <LocalPageDragLayer
         context={localDrag.dragContext}
-        session={localDrag.dragSession}
+        session={localDrag.dragLayerSession}
         dropAreaHeight={actionsHeight}
       />
     </AppFlex>

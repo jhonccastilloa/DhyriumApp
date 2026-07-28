@@ -77,7 +77,7 @@ const LocalPageDragLayer = ({
   const overlayStyle = useAnimatedStyle(() => ({
     width: context.overlayWidth.value,
     height: context.overlayHeight.value,
-    opacity: context.dragActive.value ? 1 : 0,
+    opacity: context.overlayOpacity.value,
     transform: [
       { translateX: context.overlayOriginX.value },
       {
@@ -85,7 +85,7 @@ const LocalPageDragLayer = ({
           context.overlayOriginY.value +
           context.overlayTranslateY.value,
       },
-      { scale: context.dragActive.value ? 1.02 : 1 },
+      { scale: context.overlayScale.value },
     ],
   }));
   return (

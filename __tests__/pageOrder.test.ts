@@ -215,6 +215,11 @@ describe('document composer page order', () => {
         'page-6',
         'page-7',
       ]);
+      expect(result[0]).toBe(pages[0]);
+      expect(result[1]).toBe(pages[1]);
+      expect(result[4]).toBe(pages[4]);
+      expect(result[5]).toBe(pages[5]);
+      expect(result[6]).toBe(pages[6]);
     });
 
     it('moves four positions and refuses a fifth', () => {

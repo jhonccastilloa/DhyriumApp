@@ -15,6 +15,7 @@ import type {
 import {
   useAnimatedRef,
   useSharedValue,
+  withTiming,
   type AnimatedRef,
   type SharedValue,
 } from 'react-native-reanimated';
@@ -50,6 +51,8 @@ export type LocalPageDragContext = {
   overlayTranslateY: SharedValue<number>;
   overlayWidth: SharedValue<number>;
   overlayHeight: SharedValue<number>;
+  overlayOpacity: SharedValue<number>;
+  overlayScale: SharedValue<number>;
   targetIndex: SharedValue<number>;
   autoScrollAllowed: SharedValue<boolean>;
   listBounds: SharedValue<LocalDragBounds | null>;
@@ -84,6 +87,7 @@ type UseLocalPageDragInput = {
 };
 
 const HIGHLIGHT_DURATION_MS = 700;
+const DROP_SETTLE_DURATION_MS = 100;
 
 export const useLocalPageDrag = ({
   pages,
@@ -103,7 +107,13 @@ export const useLocalPageDrag = ({
   const highlightTimerRef = useRef<
     ReturnType<typeof setTimeout> | undefined
   >(undefined);
+  const settlingTimerRef = useRef<
+    ReturnType<typeof setTimeout> | undefined
+  >(undefined);
+  const settlingFrameRef = useRef<number | undefined>(undefined);
   const [dragSession, setDragSession] =
+    useState<LocalPageDragSession>();
+  const [settlingSession, setSettlingSession] =
     useState<LocalPageDragSession>();
   const [highlightedPageId, setHighlightedPageId] = useState<string>();
 
@@ -120,6 +130,8 @@ export const useLocalPageDrag = ({
   const overlayTranslateY = useSharedValue(0);
   const overlayWidth = useSharedValue(0);
   const overlayHeight = useSharedValue(DOCUMENT_PAGE_CARD_HEIGHT);
+  const overlayOpacity = useSharedValue(0);
+  const overlayScale = useSharedValue(1);
   const targetIndex = useSharedValue(0);
   const autoScrollAllowed = useSharedValue(false);
   const listBounds = useSharedValue<LocalDragBounds | null>(null);
@@ -142,6 +154,15 @@ export const useLocalPageDrag = ({
       );
       if (verifiedIndex < 0 || verifiedIndex !== originalIndex) return;
 
+      if (settlingTimerRef.current) {
+        clearTimeout(settlingTimerRef.current);
+        settlingTimerRef.current = undefined;
+      }
+      if (settlingFrameRef.current !== undefined) {
+        cancelAnimationFrame(settlingFrameRef.current);
+        settlingFrameRef.current = undefined;
+      }
+      setSettlingSession(undefined);
       const nextSession: LocalPageDragSession = {
         pageId,
         page: currentPages[verifiedIndex],
@@ -237,21 +258,36 @@ export const useLocalPageDrag = ({
     [autoScrollAllowed, contentPadding]
   );
 
-  const showMovedPage = useCallback((pageId: string, index: number) => {
+  const highlightMovedPage = useCallback((pageId: string) => {
     setHighlightedPageId(pageId);
     if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
     highlightTimerRef.current = setTimeout(
       () => setHighlightedPageId(undefined),
       HIGHLIGHT_DURATION_MS
     );
-    requestAnimationFrame(() => {
-      listRef.current?.scrollToIndex({
-        index,
-        animated: true,
-        viewPosition: 0.5,
-      });
-    });
   }, []);
+
+  const settleOverlay = useCallback(
+    (session: LocalPageDragSession) => {
+      setSettlingSession(session);
+      settlingFrameRef.current = requestAnimationFrame(() => {
+        settlingFrameRef.current = undefined;
+        overlayScale.value = withTiming(1, {
+          duration: DROP_SETTLE_DURATION_MS,
+        });
+        overlayOpacity.value = withTiming(0, {
+          duration: DROP_SETTLE_DURATION_MS,
+        });
+        settlingTimerRef.current = setTimeout(() => {
+          settlingTimerRef.current = undefined;
+          setSettlingSession(current =>
+            current?.pageId === session.pageId ? undefined : current
+          );
+        }, DROP_SETTLE_DURATION_MS);
+      });
+    },
+    [overlayOpacity, overlayScale]
+  );
 
   const handleFinish = useCallback(
     (
@@ -273,16 +309,17 @@ export const useLocalPageDrag = ({
 
       const targetPage = pagesRef.current[nextIndex];
       if (!targetPage) return;
-      if (nextIndex !== current.originalIndex) {
-        onCommitRef.current(
-          current.windowPageIds,
-          pageId,
-          targetPage.id
-        );
-      }
-      showMovedPage(pageId, nextIndex);
+      if (nextIndex === current.originalIndex) return;
+
+      settleOverlay(current);
+      onCommitRef.current(
+        current.windowPageIds,
+        pageId,
+        targetPage.id
+      );
+      highlightMovedPage(pageId);
     },
-    [showMovedPage]
+    [highlightMovedPage, settleOverlay]
   );
 
   const requestMoveToPosition = useCallback((pageId: string) => {
@@ -298,6 +335,8 @@ export const useLocalPageDrag = ({
       overlayTranslateY,
       overlayWidth,
       overlayHeight,
+      overlayOpacity,
+      overlayScale,
       targetIndex,
       autoScrollAllowed,
       listBounds,
@@ -325,8 +364,10 @@ export const useLocalPageDrag = ({
       listBounds,
       listViewportRef,
       overlayHeight,
+      overlayOpacity,
       overlayOriginX,
       overlayOriginY,
+      overlayScale,
       overlayTranslateY,
       overlayWidth,
       requestMoveToPosition,
@@ -348,6 +389,10 @@ export const useLocalPageDrag = ({
   useEffect(
     () => () => {
       if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
+      if (settlingTimerRef.current) clearTimeout(settlingTimerRef.current);
+      if (settlingFrameRef.current !== undefined) {
+        cancelAnimationFrame(settlingFrameRef.current);
+      }
     },
     []
   );
@@ -356,6 +401,7 @@ export const useLocalPageDrag = ({
     listRef,
     dragContext,
     dragSession,
+    dragLayerSession: dragSession ?? settlingSession,
     highlightedPageId,
     onListScroll: handleListScroll,
     onListLayout: handleListLayout,
