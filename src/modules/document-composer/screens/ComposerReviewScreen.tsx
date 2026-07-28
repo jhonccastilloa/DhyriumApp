@@ -12,8 +12,9 @@ import {
   View,
   type ListRenderItem,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { StaticScreenProps } from '@react-navigation/native';
 import Animated from 'react-native-reanimated';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { toast } from 'sonner-native';
@@ -22,7 +23,7 @@ import { AppButton } from '@/components/buttons/AppButton';
 import AppIcon from '@/components/icons/AppIcon';
 import AppFlex from '@/components/layout/AppFlex';
 import AppText from '@/components/typography/AppText';
-import type { MainAppNavigatorParamList } from '@/app/navigation/MainAppNavigator';
+import type { MainAppNavigatorNavigationProp } from '@/app/navigation/MainAppNavigator';
 import { asFileUri } from '@/infrastructure/storage/fileSystemUtils';
 import ContractsService from '@/modules/contracts/services/ContractsService';
 import ComposerPageOrderSheet from '../components/ComposerPageOrderSheet';
@@ -38,17 +39,25 @@ import { pickPdfDocument } from '../services/documentPickerService';
 import { scanDocuments } from '../services/scannerService';
 import { useLocalPageDrag } from '../hooks/useLocalPageDrag';
 import { useDocumentComposerStore } from '../state/useDocumentComposerStore';
-import type { ComposerArtifact, ComposerPage } from '../types/documentComposer.types';
+import type {
+  ComposerArtifact,
+  ComposerDestination,
+  ComposerPage,
+} from '../types/documentComposer.types';
 
-type Props = NativeStackScreenProps<
-  MainAppNavigatorParamList,
-  'ComposerReview'
->;
+type Props = StaticScreenProps<{
+  mode: 'tool' | 'contract';
+  source: 'scanner' | 'pdf';
+  destination?: ComposerDestination;
+  useCurrent?: boolean;
+  resumeSessionId?: string;
+}>;
 
 const EMPTY_PAGES: ComposerPage[] = [];
 const PageSeparator = () => <View style={styles.pageSeparator} />;
 
-const ComposerReviewScreen = ({ route, navigation }: Props) => {
+const ComposerReviewScreen = ({ route }: Props) => {
+  const navigation = useNavigation<MainAppNavigatorNavigationProp>();
   const { theme } = useUnistyles();
   const started = useRef(false);
   const orderSheetRef = useRef<BottomSheetModal>(null);

@@ -8,7 +8,6 @@ import {
 import { FlatList, Pressable, RefreshControl, View } from 'react-native';
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { toast } from 'sonner-native';
 import AppHeader from '@/components/navigation/AppHeader';
@@ -22,7 +21,7 @@ import AppStatusBadge, {
 import AppProgressBar from '@/components/feedback/AppProgressBar';
 import AppFilterChip from '@/components/filters/AppFilterChip';
 import AppText from '@/components/typography/AppText';
-import type { HomeNavigatorParamList } from '@/modules/home/navigation/HomeNavigator';
+import type { HomeNavigatorNavigationProp } from '@/modules/home/navigation/HomeNavigator';
 import CompanyScopeSheet from '../components/CompanyScopeSheet';
 import ContractFiltersSheet from '../components/ContractFiltersSheet';
 import { useContractScopesQuery, useContractsQuery } from '../queries/contractQueries';
@@ -81,7 +80,7 @@ const formatDate = (value: string | null) =>
 const ContractsScreen = () => {
   const { theme } = useUnistyles();
   const navigation =
-    useNavigation<NativeStackNavigationProp<HomeNavigatorParamList>>();
+    useNavigation<HomeNavigatorNavigationProp>();
   const companySheet = useRef<BottomSheetModal>(null);
   const filterSheet = useRef<BottomSheetModal>(null);
   const [search, setSearch] = useState('');

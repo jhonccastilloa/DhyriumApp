@@ -1,20 +1,16 @@
 import { Alert, FlatList, Pressable, View } from 'react-native';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useNavigation } from '@react-navigation/native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import AppHeader from '@/components/navigation/AppHeader';
 import AppIcon from '@/components/icons/AppIcon';
 import AppFlex from '@/components/layout/AppFlex';
 import AppText from '@/components/typography/AppText';
-import type { MainAppNavigatorParamList } from '@/app/navigation/MainAppNavigator';
+import type { MainAppNavigatorNavigationProp } from '@/app/navigation/MainAppNavigator';
 import { useDocumentComposerStore } from '../state/useDocumentComposerStore';
 import type { ComposerSession } from '../types/documentComposer.types';
 
-type Props = NativeStackScreenProps<
-  MainAppNavigatorParamList,
-  'ComposerDrafts'
->;
-
-const ComposerDraftsScreen = ({ navigation }: Props) => {
+const ComposerDraftsScreen = () => {
+  const navigation = useNavigation<MainAppNavigatorNavigationProp>();
   const { theme } = useUnistyles();
   const drafts = useDocumentComposerStore(state => state.drafts);
   const removeDraft = useDocumentComposerStore(state => state.removeDraft);

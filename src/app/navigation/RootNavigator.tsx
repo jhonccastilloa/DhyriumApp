@@ -1,8 +1,6 @@
 import { useAuthStore } from '@/modules/auth/state/useAuthStore';
-import {
-  createStaticNavigation,
-  StaticParamList,
-} from '@react-navigation/native';
+import { createStaticNavigation } from '@react-navigation/native';
+import type { StaticParamList } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import MainAppNavigator from './MainAppNavigator';
 import { AuthStatus } from '@/modules/auth/types/authStatus.types';

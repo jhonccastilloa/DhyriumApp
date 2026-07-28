@@ -1,6 +1,5 @@
 import { ScrollView, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import dayjs from '@/utils/dayjsSpanish';
@@ -10,7 +9,7 @@ import AppFlex from '@/components/layout/AppFlex';
 import AppIcon from '@/components/icons/AppIcon';
 import { useProfileQuery } from '@/modules/profile/queries/useProfileQuery';
 import { HOME_MODULE_GROUPS } from '../constants/homeModules';
-import type { HomeNavigatorParamList } from '../navigation/HomeNavigator';
+import type { HomeNavigatorNavigationProp } from '../navigation/HomeNavigator';
 
 const greetingForHour = (hour: number) => {
   if (hour < 12) return 'Buenos días';
@@ -30,7 +29,7 @@ const HomeScreen = () => {
   const { theme } = useUnistyles();
   const profile = useProfileQuery();
   const navigation =
-    useNavigation<NativeStackNavigationProp<HomeNavigatorParamList>>();
+    useNavigation<HomeNavigatorNavigationProp>();
   const today = dayjs();
 
   return (
