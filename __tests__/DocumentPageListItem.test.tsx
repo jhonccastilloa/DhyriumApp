@@ -3,25 +3,6 @@ import { fireEvent, render } from '@testing-library/react-native';
 import DocumentPageListItem from '@/modules/document-composer/components/DocumentPageListItem';
 import type { ComposerPage } from '@/modules/document-composer/types/documentComposer.types';
 
-jest.mock('react-native-unistyles', () => ({
-  StyleSheet: {
-    create: () =>
-      new Proxy(
-        {},
-        {
-          get: () => ({}),
-        }
-      ),
-  },
-  useUnistyles: () => ({
-    theme: {
-      colors: { navigation: { active: '#000' } },
-    },
-  }),
-}));
-
-jest.mock('@/components/icons/AppIcon', () => () => null);
-
 jest.mock(
   '@/modules/document-composer/hooks/usePageThumbnail',
   () => ({
@@ -35,9 +16,32 @@ jest.mock(
 jest.mock(
   '@/modules/document-composer/components/AppDocumentPageCard',
   () => {
-    const { View } = jest.requireActual('react-native');
-    return ({ orderControl }: { orderControl: React.ReactNode }) => (
-      <View>{orderControl}</View>
+    const { Pressable, View } = jest.requireActual('react-native');
+    return ({
+      page,
+      onView,
+      onMoveToPosition,
+      onReorderNearby,
+    }: {
+      page: ComposerPage;
+      onView: (pageId: string) => void;
+      onMoveToPosition: (pageId: string) => void;
+      onReorderNearby: (pageId: string) => void;
+    }) => (
+      <View>
+        <Pressable
+          accessibilityLabel={`Ver página ${page.order}`}
+          onPress={() => onView(page.id)}
+        />
+        <Pressable
+          accessibilityLabel={`Mover página ${page.order} a otra posición`}
+          onPress={() => onMoveToPosition(page.id)}
+        />
+        <Pressable
+          accessibilityLabel={`Reordenar cerca de la página ${page.order}`}
+          onPress={() => onReorderNearby(page.id)}
+        />
+      </View>
     );
   }
 );
@@ -63,7 +67,8 @@ describe('DocumentPageListItem', () => {
         page={selectedPage}
         onView={jest.fn()}
         onDelete={jest.fn()}
-        onOrder={onOrder}
+        onMoveToPosition={jest.fn()}
+        onReorderNearby={onOrder}
       />
     );
 
@@ -73,5 +78,27 @@ describe('DocumentPageListItem', () => {
 
     expect(onOrder).toHaveBeenCalledTimes(1);
     expect(onOrder).toHaveBeenCalledWith('page-25');
+  });
+
+  it('opens preview from the page body and numeric moving from its action', async () => {
+    const onView = jest.fn();
+    const onMoveToPosition = jest.fn();
+    const screen = await render(
+      <DocumentPageListItem
+        page={selectedPage}
+        onView={onView}
+        onDelete={jest.fn()}
+        onMoveToPosition={onMoveToPosition}
+        onReorderNearby={jest.fn()}
+      />
+    );
+
+    await fireEvent.press(screen.getByLabelText('Ver página 25'));
+    await fireEvent.press(
+      screen.getByLabelText('Mover página 25 a otra posición')
+    );
+
+    expect(onView).toHaveBeenCalledWith('page-25');
+    expect(onMoveToPosition).toHaveBeenCalledWith('page-25');
   });
 });

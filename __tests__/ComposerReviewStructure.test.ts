@@ -25,11 +25,14 @@ describe('ComposerReview reorder structure', () => {
     'src/modules/document-composer/components/ComposerPageOrderSheet.tsx';
   const gridPath =
     'src/modules/document-composer/components/NearbyPageReorderGrid.tsx';
+  const thumbnailPath =
+    'src/modules/document-composer/components/DocumentPageThumbnail.tsx';
   const reviewScreen = readSource(reviewPath);
   const listItem = readSource(listItemPath);
   const card = readSource(cardPath);
   const sheet = readSource(sheetPath);
   const grid = readSource(gridPath);
+  const thumbnail = readSource(thumbnailPath);
   const featureSources = collectSources(
     path.join(root, 'src/modules/document-composer')
   );
@@ -58,11 +61,31 @@ describe('ComposerReview reorder structure', () => {
   });
 
   it('opens the grid from a short press without a main-list gesture', () => {
-    expect(listItem).toContain('onPress={() => onOrder(page.id)}');
+    expect(card).toContain(
+      'onPress={() => onReorderNearby(page.id)}'
+    );
+    expect(card).toContain('name="gridNine"');
+    expect(card).not.toContain('name="dotsSixVertical"');
     expect(listItem).not.toContain('onLongPress');
     expect(listItem).not.toContain('Gesture');
-    expect(sheet).toContain("useState<OrderSheetStage>('nearby')");
+    expect(sheet).toContain(
+      'useState<OrderSheetStage>(initialStage)'
+    );
     expect(sheet).not.toContain("'menu'");
+  });
+
+  it('opens preview from the card body and moving directly from its action', () => {
+    expect(card).toContain('onPress={() => onView(page.id)}');
+    expect(card).toContain(
+      'onPress={() => onMoveToPosition(page.id)}'
+    );
+    expect(card).not.toContain('name="eye"');
+    expect(reviewScreen).toContain(
+      "setPageOrderRequest({ pageId, initialStage: 'move' })"
+    );
+    expect(reviewScreen).toContain(
+      'initialStage={pageOrderRequest.initialStage}'
+    );
   });
 
   it('does not keep the replaced local drag implementation', () => {
@@ -78,7 +101,9 @@ describe('ComposerReview reorder structure', () => {
   });
 
   it('keeps the page card presentational', () => {
-    expect(card).toContain('orderControl: ReactNode');
+    expect(card).toContain(
+      'onReorderNearby: (pageId: string) => void'
+    );
     expect(card).not.toContain('react-native-reanimated-dnd');
     expect(card).not.toContain('useDocumentComposerStore');
     expect(card).not.toContain('SortableGridItem');
@@ -90,5 +115,9 @@ describe('ComposerReview reorder structure', () => {
     ).not.toContain('PdfView');
     expect(grid).not.toContain('Guardar orden');
     expect(sheet).not.toContain('Guardar orden');
+  });
+
+  it('preserves the document aspect ratio in thumbnails', () => {
+    expect(thumbnail).toContain("resizeMode: 'contain'");
   });
 });

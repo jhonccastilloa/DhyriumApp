@@ -27,6 +27,7 @@ type ComposerPageOrderSheetProps = {
   ref: RefObject<BottomSheetModal | null>;
   page: ComposerPage;
   pages: ComposerPage[];
+  initialStage?: OrderSheetStage;
   artifactId?: string;
   onApplyNearbyOrder: (
     rangePageIds: string[],
@@ -40,6 +41,7 @@ const ComposerPageOrderSheet = ({
   ref,
   page,
   pages,
+  initialStage = 'nearby',
   artifactId,
   onApplyNearbyOrder,
   onMoveToPosition,
@@ -47,19 +49,28 @@ const ComposerPageOrderSheet = ({
 }: ComposerPageOrderSheetProps) => {
   const { theme } = useUnistyles();
   const insets = useSafeAreaInsets();
-  const [stage, setStage] = useState<OrderSheetStage>('nearby');
+  const [stage, setStage] =
+    useState<OrderSheetStage>(initialStage);
   const [position, setPosition] = useState('');
+  const [movePageId, setMovePageId] = useState(page.id);
   const [rangePageIds] = useState(() =>
-    getNearbyPages(pages, page.id).map(item => item.id)
+    initialStage === 'nearby'
+      ? getNearbyPages(pages, page.id).map(item => item.id)
+      : []
   );
   const rangePageIdSet = useMemo(
     () => new Set(rangePageIds),
     [rangePageIds]
   );
   const nearbyPages = useMemo(
-    () => pages.filter(item => rangePageIdSet.has(item.id)),
-    [pages, rangePageIdSet]
+    () =>
+      stage === 'nearby'
+        ? pages.filter(item => rangePageIdSet.has(item.id))
+        : [],
+    [pages, rangePageIdSet, stage]
   );
+  const movePage =
+    pages.find(item => item.id === movePageId) ?? page;
   const snapPoints =
     stage === 'nearby'
       ? NEARBY_SHEET_SNAP_POINTS
@@ -71,12 +82,7 @@ const ComposerPageOrderSheet = ({
     targetPosition >= 1 &&
     targetPosition <= pages.length;
   const canMove =
-    hasValidPosition && targetPosition !== page.order;
-
-  useEffect(() => {
-    setStage('nearby');
-    setPosition('');
-  }, [page.id]);
+    hasValidPosition && targetPosition !== movePage.order;
 
   useEffect(() => {
     ref.current?.snapToIndex(0);
@@ -94,13 +100,14 @@ const ComposerPageOrderSheet = ({
   }, [ref]);
 
   const close = () => ref.current?.dismiss();
-  const openMoveToPosition = () => {
+  const openMoveToPosition = (pageId: string) => {
+    setMovePageId(pageId);
     setPosition('');
     setStage('move');
   };
   const move = () => {
     if (!canMove) return;
-    onMoveToPosition(page.id, targetPosition);
+    onMoveToPosition(movePage.id, targetPosition);
     close();
   };
 
@@ -130,7 +137,7 @@ const ComposerPageOrderSheet = ({
             <AppText variant="title.m" color="headings">
               {stage === 'nearby'
                 ? `Reordenar cerca de la página ${page.order}`
-                : `Mover página ${page.order}`}
+                : `Mover página ${movePage.order}`}
             </AppText>
             <AppText variant="text.xs.regular" color="details">
               {stage === 'nearby'
@@ -167,7 +174,7 @@ const ComposerPageOrderSheet = ({
                 Página que se moverá
               </AppText>
               <AppText variant="text.sm.bold" color="headings">
-                Página {page.order} · {page.fileName}
+                Página {movePage.order} · {movePage.fileName}
               </AppText>
             </AppFlex>
 
@@ -186,7 +193,8 @@ const ComposerPageOrderSheet = ({
                   Introduce un entero entre 1 y {pages.length}.
                 </AppText>
               ) : null}
-              {hasValidPosition && targetPosition === page.order ? (
+              {hasValidPosition &&
+              targetPosition === movePage.order ? (
                 <AppText variant="text.xs.regular" color="error">
                   La página ya está en esa posición.
                 </AppText>

@@ -1,10 +1,5 @@
-import { memo, type ReactNode } from 'react';
-import {
-  Pressable,
-  View,
-  type StyleProp,
-  type ViewStyle,
-} from 'react-native';
+import { memo } from 'react';
+import { Pressable, View } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import AppStatusBadge from '@/components/feedback/AppStatusBadge';
 import AppIcon from '@/components/icons/AppIcon';
@@ -18,9 +13,9 @@ type AppDocumentPageCardProps = {
   thumbnailUri?: string;
   isThumbnailLoading: boolean;
   onView: (pageId: string) => void;
+  onMoveToPosition: (pageId: string) => void;
   onDelete: (pageId: string) => void;
-  orderControl: ReactNode;
-  style?: StyleProp<ViewStyle>;
+  onReorderNearby: (pageId: string) => void;
 };
 
 const AppDocumentPageCard = ({
@@ -28,58 +23,73 @@ const AppDocumentPageCard = ({
   thumbnailUri,
   isThumbnailLoading,
   onView,
+  onMoveToPosition,
   onDelete,
-  orderControl,
-  style,
+  onReorderNearby,
 }: AppDocumentPageCardProps) => {
   const { theme } = useUnistyles();
   return (
-    <View style={[styles.card, style]}>
-      <View style={styles.thumbnail}>
-        <DocumentPageThumbnail
-          page={page}
-          thumbnailUri={thumbnailUri}
-          isLoading={isThumbnailLoading}
-        />
-        <View style={styles.pageNumber}>
-          <AppText variant="text.xs.bold" color="button">
-            {page.order}
-          </AppText>
+    <View style={styles.card}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Ver página ${page.order}`}
+        accessibilityHint="Abre la vista previa de esta página."
+        onPress={() => onView(page.id)}
+        style={({ pressed }) => [
+          styles.preview,
+          pressed && styles.previewPressed,
+        ]}
+      >
+        <View style={styles.thumbnail}>
+          <DocumentPageThumbnail
+            page={page}
+            thumbnailUri={thumbnailUri}
+            isLoading={isThumbnailLoading}
+          />
+          <View style={styles.pageNumber}>
+            <AppText variant="text.xs.bold" color="button">
+              {page.order}
+            </AppText>
+          </View>
         </View>
-      </View>
-      <View style={styles.copy}>
-        <AppText variant="text.sm.bold" color="headings" numberOfLines={1}>
-          Página {page.order}
-        </AppText>
-        <AppText variant="text.xs.regular" color="details" numberOfLines={1}>
-          {page.fileName}
-        </AppText>
-        <AppText variant="text.xs.regular" color="details" numberOfLines={1}>
-          {page.origin === 'scanned'
-            ? page.uri.replace(/^.*\//, '…/')
-            : `PDF original · página ${page.originalPageNumber}`}
-        </AppText>
-        <AppStatusBadge
-          label={
-            page.legibilityStatus === 'legible'
-              ? 'Legible'
-              : 'Por revisar'
-          }
-          tone={
-            page.legibilityStatus === 'legible' ? 'success' : 'warning'
-          }
-        />
-      </View>
+        <View style={styles.copy}>
+          <AppText variant="text.sm.bold" color="headings" numberOfLines={1}>
+            Página {page.order}
+          </AppText>
+          <AppText variant="text.xs.regular" color="details" numberOfLines={1}>
+            {page.fileName}
+          </AppText>
+          <AppText variant="text.xs.regular" color="details" numberOfLines={1}>
+            {page.origin === 'scanned'
+              ? page.uri.replace(/^.*\//, '…/')
+              : `PDF original · página ${page.originalPageNumber}`}
+          </AppText>
+          <AppStatusBadge
+            label={
+              page.legibilityStatus === 'legible'
+                ? 'Legible'
+                : 'Por revisar'
+            }
+            tone={
+              page.legibilityStatus === 'legible'
+                ? 'success'
+                : 'warning'
+            }
+          />
+        </View>
+      </Pressable>
       <View style={styles.actions}>
         <Pressable
-          accessibilityLabel={`Ver página ${page.order}`}
-          onPress={() => onView(page.id)}
+          accessibilityRole="button"
+          accessibilityLabel={`Mover página ${page.order} a otra posición`}
+          accessibilityHint="Abre el formulario para elegir una posición final."
+          onPress={() => onMoveToPosition(page.id)}
           style={styles.iconButton}
         >
           <AppIcon
-            name="eye"
+            name="sortAscending"
             size={20}
-            mColor={theme.colors.icon.secondary}
+            mColor={theme.colors.navigation.active}
           />
         </Pressable>
         <Pressable
@@ -93,7 +103,19 @@ const AppDocumentPageCard = ({
             mColor={theme.colors.text.error}
           />
         </Pressable>
-        {orderControl}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Reordenar cerca de la página ${page.order}`}
+          accessibilityHint="Abre una cuadrícula con las páginas cercanas."
+          onPress={() => onReorderNearby(page.id)}
+          style={[styles.iconButton, styles.nearbyButton]}
+        >
+          <AppIcon
+            name="gridNine"
+            size={22}
+            mColor={theme.colors.navigation.active}
+          />
+        </Pressable>
       </View>
     </View>
   );
@@ -110,6 +132,18 @@ const styles = StyleSheet.create(theme => ({
     backgroundColor: theme.colors.surface.background.cards,
     borderWidth: theme.border.hairline,
     borderColor: theme.colors.border.subtle,
+  },
+  preview: {
+    height: '100%',
+    minWidth: 0,
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    borderRadius: theme.radius.sm,
+  },
+  previewPressed: {
+    opacity: theme.opacity.pressed,
   },
   thumbnail: {
     position: 'relative',
@@ -145,6 +179,9 @@ const styles = StyleSheet.create(theme => ({
     justifyContent: 'center',
     borderRadius: theme.radius.sm,
     backgroundColor: theme.colors.surface.background.elements,
+  },
+  nearbyButton: {
+    backgroundColor: theme.colors.navigation.rail,
   },
 }));
 

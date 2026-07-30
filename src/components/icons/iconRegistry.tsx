@@ -9,7 +9,6 @@ import {
   ClipboardTextIcon,
   CloudArrowUpIcon,
   DotsThreeOutlineIcon,
-  DotsSixVerticalIcon,
   DoorIcon,
   FilePdfIcon,
   FileTextIcon,
@@ -17,6 +16,7 @@ import {
   FolderOpenIcon,
   ForkKnifeIcon,
   FunnelIcon,
+  GridNineIcon,
   HardHatIcon,
   HouseIcon,
   IdentificationCardIcon,
@@ -140,9 +140,6 @@ const iconRegistry = {
     <CloudArrowUpIcon color={props.color} size={props.size} />
   ),
   door: (props: IconProps) => <DoorIcon color={props.color} size={props.size} />,
-  dotsSixVertical: (props: IconProps) => (
-    <DotsSixVerticalIcon color={props.color} size={props.size} weight="bold" />
-  ),
   filePdf: (props: IconProps) => (
     <FilePdfIcon
       color={props.color}
@@ -162,6 +159,13 @@ const iconRegistry = {
   ),
   funnel: (props: IconProps) => (
     <FunnelIcon
+      color={props.color}
+      size={props.size}
+      weight={getIconWeight(props.variant)}
+    />
+  ),
+  gridNine: (props: IconProps) => (
+    <GridNineIcon
       color={props.color}
       size={props.size}
       weight={getIconWeight(props.variant)}

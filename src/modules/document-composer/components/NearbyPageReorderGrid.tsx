@@ -1,4 +1,9 @@
-import { useCallback, useMemo, useState } from 'react';
+import {
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { View, type LayoutChangeEvent } from 'react-native';
 import {
   GridStrategy,
@@ -11,16 +16,21 @@ import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { toast } from 'sonner-native';
 import { AppButton } from '@/components/buttons/AppButton';
 import AppText from '@/components/typography/AppText';
+import { NEARBY_PAGE_ORDER_TOAST_ID } from '../constants/documentComposerFeedback';
 import {
   resolvePageOrderFromPositions,
 } from '../domain/pageOrder';
 import { usePageThumbnail } from '../hooks/usePageThumbnail';
 import type { ComposerPage } from '../types/documentComposer.types';
-import { calculateNearbyGridLayout } from '../utils/nearbyGridLayout';
+import {
+  calculateNearbyGridLayout,
+  resolveNearbyGridDragTarget,
+  type NearbyGridDragTarget,
+} from '../utils/nearbyGridLayout';
 import DocumentPageThumbnail from './DocumentPageThumbnail';
 
-const GRID_ACTIVATION_DELAY_MS = 80;
-const ORDER_TOAST_ID = 'document-composer-nearby-order';
+const GRID_ACTIVATION_DELAY_MS = 0;
+const MOVE_DROP_TARGET_HEIGHT = 56;
 const pageKeyExtractor = (page: ComposerPage) => page.id;
 
 type GridAreaSize = {
@@ -35,6 +45,12 @@ type CompactPageProps = SortableGridRenderItemProps<ComposerPage> & {
   containerWidth: number;
   containerHeight: number;
   onDragStart: (pageId: string) => void;
+  onDragging: (
+    pageId: string,
+    overPageId: string | null,
+    x: number,
+    y: number
+  ) => void;
   onDrop: (
     pageId: string,
     position: number,
@@ -51,7 +67,7 @@ type NearbyPageReorderGridProps = {
     rangePageIds: string[],
     orderedPageIds: string[]
   ) => void;
-  onMoveToPosition: () => void;
+  onMoveToPosition: (pageId: string) => void;
 };
 
 const CompactSortablePage = ({
@@ -62,6 +78,7 @@ const CompactSortablePage = ({
   containerWidth,
   containerHeight,
   onDragStart,
+  onDragging,
   onDrop,
   ...gridItemProps
 }: CompactPageProps) => {
@@ -77,6 +94,7 @@ const CompactSortablePage = ({
       containerHeight={containerHeight}
       activationDelay={GRID_ACTIVATION_DELAY_MS}
       onDragStart={onDragStart}
+      onDragging={onDragging}
       onDrop={onDrop}
     >
       <View
@@ -125,6 +143,10 @@ const NearbyPageReorderGrid = ({
 }: NearbyPageReorderGridProps) => {
   const { theme } = useUnistyles();
   const [activePageId, setActivePageId] = useState<string>();
+  const [dragTarget, setDragTarget] =
+    useState<NearbyGridDragTarget>('outside');
+  const [gridRevision, setGridRevision] = useState(0);
+  const dragTargetRef = useRef<NearbyGridDragTarget>('outside');
   const [gridArea, setGridArea] = useState<GridAreaSize>({
     width: 0,
     height: 0,
@@ -134,7 +156,12 @@ const NearbyPageReorderGrid = ({
     () =>
       calculateNearbyGridLayout(
         gridArea.width,
-        gridArea.height,
+        Math.max(
+          gridArea.height -
+            MOVE_DROP_TARGET_HEIGHT -
+            theme.spacing.sm,
+          0
+        ),
         pages.length,
         theme.spacing.sm
       ),
@@ -158,13 +185,80 @@ const NearbyPageReorderGrid = ({
     []
   );
 
-  const handleDrop = useCallback(
+  const updateDragTarget = useCallback(
+    (nextTarget: NearbyGridDragTarget) => {
+      dragTargetRef.current = nextTarget;
+      setDragTarget(current =>
+        current === nextTarget ? current : nextTarget
+      );
+    },
+    []
+  );
+
+  const handleDragStart = useCallback(
+    (pageId: string) => {
+      setActivePageId(pageId);
+      updateDragTarget('grid');
+    },
+    [updateDragTarget]
+  );
+
+  const handleDragging = useCallback(
     (
       _pageId: string,
+      _overPageId: string | null,
+      x: number,
+      y: number
+    ) => {
+      updateDragTarget(
+        resolveNearbyGridDragTarget({
+          x,
+          y,
+          itemWidth: gridLayout.dimensions.itemWidth,
+          itemHeight: gridLayout.dimensions.itemHeight,
+          gridWidth: gridLayout.width,
+          gridHeight: gridLayout.height,
+          dropTargetGap: theme.spacing.sm,
+          dropTargetHeight: MOVE_DROP_TARGET_HEIGHT,
+        })
+      );
+    },
+    [
+      gridLayout.dimensions.itemHeight,
+      gridLayout.dimensions.itemWidth,
+      gridLayout.height,
+      gridLayout.width,
+      theme.spacing.sm,
+      updateDragTarget,
+    ]
+  );
+
+  const requestMoveToPosition = useCallback(
+    (pageId: string) => {
+      toast.dismiss(NEARBY_PAGE_ORDER_TOAST_ID);
+      onMoveToPosition(pageId);
+    },
+    [onMoveToPosition]
+  );
+
+  const handleDrop = useCallback(
+    (
+      pageId: string,
       _position: number,
       allPositions?: GridPositions
     ) => {
+      const outcome = dragTargetRef.current;
       setActivePageId(undefined);
+      updateDragTarget('outside');
+      if (outcome === 'moveToPosition') {
+        requestMoveToPosition(pageId);
+        return;
+      }
+      if (outcome !== 'grid') {
+        setGridRevision(current => current + 1);
+        return;
+      }
+
       const orderedPageIds = resolvePageOrderFromPositions(
         pageIds,
         allPositions
@@ -173,24 +267,33 @@ const NearbyPageReorderGrid = ({
         !orderedPageIds ||
         orderedPageIds.every((id, index) => id === pageIds[index])
       ) {
+        if (!orderedPageIds) {
+          setGridRevision(current => current + 1);
+        }
         return;
       }
 
       const previousPageIds = [...pageIds];
       onApplyOrder(rangePageIds, orderedPageIds);
       toast.success('Orden actualizado', {
-        id: ORDER_TOAST_ID,
+        id: NEARBY_PAGE_ORDER_TOAST_ID,
         duration: 6000,
         action: {
           label: 'Deshacer',
           onClick: () => {
             onApplyOrder(rangePageIds, previousPageIds);
-            toast.dismiss(ORDER_TOAST_ID);
+            toast.dismiss(NEARBY_PAGE_ORDER_TOAST_ID);
           },
         },
       });
     },
-    [onApplyOrder, pageIds, rangePageIds]
+    [
+      onApplyOrder,
+      pageIds,
+      rangePageIds,
+      requestMoveToPosition,
+      updateDragTarget,
+    ]
   );
 
   const renderCompactPage = useCallback(
@@ -199,11 +302,12 @@ const NearbyPageReorderGrid = ({
         key={props.id}
         {...props}
         artifactId={artifactId}
-        selectedPageId={selectedPageId}
+        selectedPageId={activePageId ?? selectedPageId}
         activePageId={activePageId}
         containerWidth={gridLayout.width}
         containerHeight={gridLayout.height}
-        onDragStart={setActivePageId}
+        onDragStart={handleDragStart}
+        onDragging={handleDragging}
         onDrop={handleDrop}
       />
     ),
@@ -213,14 +317,21 @@ const NearbyPageReorderGrid = ({
       gridLayout.height,
       gridLayout.width,
       handleDrop,
+      handleDragStart,
+      handleDragging,
       selectedPageId,
     ]
   );
 
-  const moveToPosition = () => {
-    toast.dismiss(ORDER_TOAST_ID);
-    onMoveToPosition();
-  };
+  const actionPageId = activePageId ?? selectedPageId;
+  const actionPage = pages.find(page => page.id === actionPageId);
+  const dragSurfaceHeight =
+    gridLayout.height + theme.spacing.sm + MOVE_DROP_TARGET_HEIGHT;
+  const moveActionText = activePageId
+    ? dragTarget === 'moveToPosition'
+      ? `Suelta aquí para mover la página ${actionPage?.order ?? ''}`
+      : `Arrastra aquí para mover la página ${actionPage?.order ?? ''}`
+    : `Mover página ${actionPage?.order ?? ''} a otra posición…`;
 
   return (
     <View style={styles.content}>
@@ -235,35 +346,47 @@ const NearbyPageReorderGrid = ({
         {gridLayout.ready ? (
           <View
             style={[
-              styles.gridFrame,
+              styles.dragSurface,
               {
                 width: gridLayout.width,
-                height: gridLayout.height,
+                height: dragSurfaceHeight,
               },
             ]}
           >
             <SortableGrid
+              key={gridRevision}
               data={pages}
               dimensions={gridLayout.dimensions}
               strategy={GridStrategy.Insert}
               scrollEnabled={false}
               itemKeyExtractor={pageKeyExtractor}
               renderItem={renderCompactPage}
-              style={{
-                width: gridLayout.width,
-                height: gridLayout.height,
-              }}
+              style={[
+                styles.gridViewport,
+                {
+                  width: gridLayout.width,
+                  height: dragSurfaceHeight,
+                },
+              ]}
+            />
+            <AppButton
+              testID="move-to-position-drop-target"
+              text={moveActionText}
+              variant="ghost"
+              accessibilityLabel={moveActionText}
+              onPress={() => requestMoveToPosition(actionPageId)}
+              style={[
+                styles.moveDropTarget,
+                {
+                  top: gridLayout.height + theme.spacing.sm,
+                },
+                dragTarget === 'moveToPosition' &&
+                  styles.moveDropTargetActive,
+              ]}
             />
           </View>
         ) : null}
       </View>
-      <AppButton
-        text={`Mover página ${
-          pages.find(page => page.id === selectedPageId)?.order ?? ''
-        } a otra posición…`}
-        variant="ghost"
-        onPress={moveToPosition}
-      />
     </View>
   );
 };
@@ -276,8 +399,26 @@ const styles = StyleSheet.create(theme => ({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  gridFrame: {
-    overflow: 'hidden',
+  dragSurface: {
+    position: 'relative',
+    overflow: 'visible',
+  },
+  gridViewport: {
+    overflow: 'visible',
+  },
+  moveDropTarget: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: MOVE_DROP_TARGET_HEIGHT,
+    zIndex: 2,
+    borderWidth: theme.border.hairline,
+    borderColor: theme.colors.border.default,
+  },
+  moveDropTargetActive: {
+    borderWidth: theme.border.emphasized,
+    borderColor: theme.colors.border.focus,
+    backgroundColor: theme.colors.navigation.rail,
   },
   compactPage: {
     flex: 1,

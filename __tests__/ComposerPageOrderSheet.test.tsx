@@ -99,13 +99,19 @@ jest.mock(
     }: {
       pages: ComposerPage[];
       selectedPageId: string;
-      onMoveToPosition: () => void;
+      onMoveToPosition: (pageId: string) => void;
     }) => (
       <View testID="nearby-grid">
         <Text>{`${pages.length}:${selectedPageId}`}</Text>
-        <Pressable onPress={onMoveToPosition}>
+        <Pressable
+          onPress={() => onMoveToPosition(selectedPageId)}
+        >
           <Text>Mover página 3 a otra posición…</Text>
         </Pressable>
+        <Pressable
+          testID="move-page-4"
+          onPress={() => onMoveToPosition(pages[3].id)}
+        />
       </View>
     );
   }
@@ -131,7 +137,8 @@ const selectedPage = pages[2];
 
 const renderSheet = async (
   onMove = jest.fn(),
-  dismiss = jest.fn()
+  dismiss = jest.fn(),
+  initialStage: 'nearby' | 'move' = 'nearby'
 ) =>
   render(
     <ComposerPageOrderSheet
@@ -142,6 +149,7 @@ const renderSheet = async (
       }
       page={selectedPage}
       pages={pages}
+      initialStage={initialStage}
       onApplyNearbyOrder={jest.fn()}
       onMoveToPosition={onMove}
       onDismiss={jest.fn()}
@@ -193,6 +201,38 @@ describe('ComposerPageOrderSheet', () => {
     expect(screen.queryByTestId('nearby-grid')).toBeNull();
     expect(screen.getByText('Mover página 3')).toBeTruthy();
     expect(screen.getByPlaceholderText('Entre 1 y 5')).toBeTruthy();
+  });
+
+  it('can open directly in the numeric stage from the page action', async () => {
+    const screen = await renderSheet(
+      jest.fn(),
+      jest.fn(),
+      'move'
+    );
+
+    expect(screen.queryByTestId('nearby-grid')).toBeNull();
+    expect(screen.getByText('Mover página 3')).toBeTruthy();
+    expect(screen.getByPlaceholderText('Entre 1 y 5')).toBeTruthy();
+  });
+
+  it('moves the page chosen from the nearby grid', async () => {
+    const onMove = jest.fn();
+    const screen = await renderSheet(onMove);
+
+    await fireEvent.press(screen.getByTestId('move-page-4'));
+    expect(screen.getByText('Mover página 4')).toBeTruthy();
+    expect(
+      screen.getByText('Página 4 · page-4.jpg')
+    ).toBeTruthy();
+
+    await fireEvent.changeText(
+      screen.getByPlaceholderText('Entre 1 y 5'),
+      '1'
+    );
+    await fireEvent.press(screen.getByText('Mover'));
+
+    expect(onMove).toHaveBeenCalledTimes(1);
+    expect(onMove).toHaveBeenCalledWith('page-4', 1);
   });
 
   it('closes the nearby grid from the header without applying an order', async () => {

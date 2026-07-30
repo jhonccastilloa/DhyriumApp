@@ -52,7 +52,7 @@ const DocumentPageThumbnail = ({
 };
 
 const styles = StyleSheet.create({
-  image: { width: '100%', height: '100%', resizeMode: 'cover' },
+  image: { width: '100%', height: '100%', resizeMode: 'contain' },
 });
 
 export default DocumentPageThumbnail;
