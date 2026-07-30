@@ -1,7 +1,12 @@
 import type { ComposerPage } from '../types/documentComposer.types';
 
 export const NEARBY_PAGE_LIMIT = 9;
-export const MAX_LOCAL_PAGE_MOVE = 4;
+
+type PagePosition = {
+  index: number;
+};
+
+type PagePositions = Record<string, PagePosition>;
 
 export const normalizePageOrder = (pages: ComposerPage[]) => {
   let changed = false;
@@ -120,48 +125,38 @@ export const replacePageRangeByIds = (
   return applyResolvedPageRangeOrder(pages, range, orderedPageIds);
 };
 
-export const movePageWithinRangeByIds = (
-  pages: ComposerPage[],
-  localPageIds: string[],
-  movingPageId: string,
-  targetPageId: string,
-  maxDistance = MAX_LOCAL_PAGE_MOVE
+export const resolvePageOrderFromPositions = (
+  expectedPageIds: string[],
+  positions?: PagePositions
 ) => {
+  if (!positions || expectedPageIds.length === 0) return undefined;
+
+  const expectedIds = new Set(expectedPageIds);
+  const entries = Object.entries(positions);
   if (
-    movingPageId === targetPageId ||
-    localPageIds.length === 0 ||
-    localPageIds.length > NEARBY_PAGE_LIMIT ||
-    !Number.isInteger(maxDistance) ||
-    maxDistance < 0
+    expectedIds.size !== expectedPageIds.length ||
+    entries.length !== expectedPageIds.length ||
+    entries.some(([id]) => !expectedIds.has(id))
   ) {
-    return pages;
+    return undefined;
   }
 
-  const range = resolveContiguousPageRange(pages, localPageIds);
-  if (
-    !range ||
-    !range.pageIds.has(movingPageId) ||
-    !range.pageIds.has(targetPageId)
-  ) {
-    return pages;
+  const indexes = new Set<number>();
+  for (const [, position] of entries) {
+    if (
+      !Number.isInteger(position.index) ||
+      position.index < 0 ||
+      position.index >= expectedPageIds.length ||
+      indexes.has(position.index)
+    ) {
+      return undefined;
+    }
+    indexes.add(position.index);
   }
 
-  const currentRangeIds = range.pages.map(page => page.id);
-  const movingIndex = currentRangeIds.indexOf(movingPageId);
-  const targetIndex = currentRangeIds.indexOf(targetPageId);
-  if (
-    movingIndex < 0 ||
-    targetIndex < 0 ||
-    Math.abs(targetIndex - movingIndex) > maxDistance
-  ) {
-    return pages;
-  }
-
-  const orderedIds = [...currentRangeIds];
-  const [movingId] = orderedIds.splice(movingIndex, 1);
-  orderedIds.splice(targetIndex, 0, movingId);
-
-  return applyResolvedPageRangeOrder(pages, range, orderedIds);
+  return entries
+    .sort(([, left], [, right]) => left.index - right.index)
+    .map(([id]) => id);
 };
 
 export const movePageToPosition = (

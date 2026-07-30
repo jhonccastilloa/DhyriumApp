@@ -1,10 +1,10 @@
 import {
   appendPages,
   getNearbyPages,
-  movePageWithinRangeByIds,
   movePageToPosition,
   removePage,
   replacePageRangeByIds,
+  resolvePageOrderFromPositions,
 } from '@/modules/document-composer/domain/pageOrder';
 import type { ComposerPage } from '@/modules/document-composer/types/documentComposer.types';
 
@@ -169,150 +169,43 @@ describe('document composer page order', () => {
     ).toBe(original);
   });
 
-  describe('local page movement', () => {
-    const original = (count = 12) =>
-      Array.from({ length: count }, (_, index) =>
-        page(`page-${index + 1}`, index + 1)
-      );
+  describe('grid position validation', () => {
+    const positions = {
+      a: { index: 2 },
+      b: { index: 0 },
+      c: { index: 1 },
+    };
 
-    it('moves one position up using stable IDs', () => {
-      const pages = original(7);
-      const result = movePageWithinRangeByIds(
-        pages,
-        pages.map(item => item.id),
-        'page-4',
-        'page-3'
-      );
-
-      expect(result.map(item => item.id)).toEqual([
-        'page-1',
-        'page-2',
-        'page-4',
-        'page-3',
-        'page-5',
-        'page-6',
-        'page-7',
-      ]);
-      expect(result[0]).toBe(pages[0]);
-      expect(result[4]).toBe(pages[4]);
+    it('returns the complete stable ID order', () => {
+      expect(
+        resolvePageOrderFromPositions(['a', 'b', 'c'], positions)
+      ).toEqual(['b', 'c', 'a']);
     });
 
-    it('moves one position down', () => {
-      const pages = original(7);
-      const result = movePageWithinRangeByIds(
-        pages,
-        pages.map(item => item.id),
-        'page-3',
-        'page-4'
-      );
-
-      expect(result.map(item => item.id)).toEqual([
-        'page-1',
-        'page-2',
-        'page-4',
-        'page-3',
-        'page-5',
-        'page-6',
-        'page-7',
-      ]);
-      expect(result[0]).toBe(pages[0]);
-      expect(result[1]).toBe(pages[1]);
-      expect(result[4]).toBe(pages[4]);
-      expect(result[5]).toBe(pages[5]);
-      expect(result[6]).toBe(pages[6]);
-    });
-
-    it('moves four positions and refuses a fifth', () => {
-      const pages = original(9);
-      const ids = pages.map(item => item.id);
-      const moved = movePageWithinRangeByIds(
-        pages,
-        ids,
-        'page-2',
-        'page-6'
-      );
-
-      expect(moved.map(item => item.id)).toEqual([
-        'page-1',
-        'page-3',
-        'page-4',
-        'page-5',
-        'page-6',
-        'page-2',
-        'page-7',
-        'page-8',
-        'page-9',
-      ]);
+    it('rejects unknown, missing, duplicate, and invalid positions', () => {
       expect(
-        movePageWithinRangeByIds(
-          pages,
-          ids,
-          'page-2',
-          'page-7'
-        )
-      ).toBe(pages);
-    });
-
-    it('moves at the start and end of the document', () => {
-      const pages = original();
-      const startWindow = getNearbyPages(pages, 'page-1').map(
-        item => item.id
-      );
-      const endWindow = getNearbyPages(pages, 'page-12').map(
-        item => item.id
-      );
-
-      const movedFromStart = movePageWithinRangeByIds(
-        pages,
-        startWindow,
-        'page-1',
-        'page-5'
-      );
-      const movedFromEnd = movePageWithinRangeByIds(
-        pages,
-        endWindow,
-        'page-12',
-        'page-8'
-      );
-
-      expect(movedFromStart[4].id).toBe('page-1');
-      expect(movedFromEnd[7].id).toBe('page-12');
-    });
-
-    it('rejects duplicate, missing, non-contiguous, and oversized IDs', () => {
-      const pages = original();
+        resolvePageOrderFromPositions(['a', 'b'], positions)
+      ).toBeUndefined();
       expect(
-        movePageWithinRangeByIds(
-          pages,
-          ['page-1', 'page-1'],
-          'page-1',
-          'page-2'
-        )
-      ).toBe(pages);
+        resolvePageOrderFromPositions(['a', 'b', 'c'], {
+          a: { index: 0 },
+          b: { index: 1 },
+        })
+      ).toBeUndefined();
       expect(
-        movePageWithinRangeByIds(
-          pages,
-          ['page-1', 'missing'],
-          'page-1',
-          'missing'
-        )
-      ).toBe(pages);
+        resolvePageOrderFromPositions(['a', 'b', 'c'], {
+          a: { index: 0 },
+          b: { index: 0 },
+          c: { index: 2 },
+        })
+      ).toBeUndefined();
       expect(
-        movePageWithinRangeByIds(
-          pages,
-          ['page-1', 'page-3'],
-          'page-1',
-          'page-3'
-        )
-      ).toBe(pages);
-      expect(
-        movePageWithinRangeByIds(
-          pages,
-          pages.slice(0, 10).map(item => item.id),
-          'page-1',
-          'page-2'
-        )
-      ).toBe(pages);
+        resolvePageOrderFromPositions(['a', 'b', 'c'], {
+          a: { index: 0 },
+          b: { index: 1.5 },
+          c: { index: 2 },
+        })
+      ).toBeUndefined();
     });
   });
 

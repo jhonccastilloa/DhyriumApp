@@ -8,10 +8,10 @@ import {
 } from '@/infrastructure/storage/fileSystemUtils';
 import {
   appendPages,
-  movePageWithinRangeByIds,
   movePageToPosition,
   normalizePageOrder,
   removePage,
+  replacePageRangeByIds,
 } from '../domain/pageOrder';
 import type {
   ComposerDestination,
@@ -57,10 +57,9 @@ type ComposerStore = {
   }) => void;
   addScannedPaths: (paths: string[]) => Promise<void>;
   replaceWithScannedPaths: (paths: string[]) => Promise<void>;
-  applyLocalPageMove: (
-    localPageIds: string[],
-    pageId: string,
-    targetPageId: string
+  applyNearbyPageOrder: (
+    rangePageIds: string[],
+    orderedPageIds: string[]
   ) => void;
   moveToPosition: (pageId: string, targetPosition: number) => void;
   deletePage: (pageId: string) => Promise<void>;
@@ -191,17 +190,16 @@ export const useDocumentComposerStore = create<ComposerStore>((set, get) => ({
     updateSessionPages(set, get, normalizePageOrder(added));
   },
 
-  applyLocalPageMove: (localPageIds, pageId, targetPageId) => {
+  applyNearbyPageOrder: (rangePageIds, orderedPageIds) => {
     const session = get().session;
     if (!session) return;
     updateSessionPages(
       set,
       get,
-      movePageWithinRangeByIds(
+      replacePageRangeByIds(
         session.pages,
-        localPageIds,
-        pageId,
-        targetPageId
+        rangePageIds,
+        orderedPageIds
       )
     );
   },

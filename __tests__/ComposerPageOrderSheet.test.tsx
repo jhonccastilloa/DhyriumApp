@@ -1,5 +1,6 @@
 import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
+import { BackHandler } from 'react-native';
 import ComposerPageOrderSheet from '@/modules/document-composer/components/ComposerPageOrderSheet';
 import type { ComposerPage } from '@/modules/document-composer/types/documentComposer.types';
 
@@ -20,6 +21,10 @@ jest.mock('react-native-unistyles', () => ({
       },
     },
   }),
+}));
+
+jest.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => ({ top: 10, bottom: 10, left: 0, right: 0 }),
 }));
 
 jest.mock('@/components/bottom-sheets/AppBottomSheetModal', () => {
@@ -83,30 +88,142 @@ jest.mock('@/components/buttons/AppButton', () => {
   };
 });
 
-const selectedPage: ComposerPage = {
-  id: 'page-3',
-  source: 'page-3.jpg',
-  uri: 'file:///page-3.jpg',
-  fileName: 'page-3.jpg',
+jest.mock(
+  '@/modules/document-composer/components/NearbyPageReorderGrid',
+  () => {
+    const { Pressable, Text, View } = jest.requireActual('react-native');
+    return ({
+      pages,
+      selectedPageId,
+      onMoveToPosition,
+    }: {
+      pages: ComposerPage[];
+      selectedPageId: string;
+      onMoveToPosition: () => void;
+    }) => (
+      <View testID="nearby-grid">
+        <Text>{`${pages.length}:${selectedPageId}`}</Text>
+        <Pressable onPress={onMoveToPosition}>
+          <Text>Mover página 3 a otra posición…</Text>
+        </Pressable>
+      </View>
+    );
+  }
+);
+
+const page = (id: string, order: number): ComposerPage => ({
+  id,
+  source: `${id}.jpg`,
+  uri: `file:///${id}.jpg`,
+  fileName: `${id}.jpg`,
   mimeType: 'image/jpeg',
-  order: 3,
+  order,
   legibilityStatus: 'pending',
   origin: 'scanned',
   createdAt: '2026-07-23T00:00:00.000Z',
   ownedBySession: true,
-};
+});
+
+const pages = Array.from({ length: 5 }, (_, index) =>
+  page(`page-${index + 1}`, index + 1)
+);
+const selectedPage = pages[2];
+
+const renderSheet = async (
+  onMove = jest.fn(),
+  dismiss = jest.fn()
+) =>
+  render(
+    <ComposerPageOrderSheet
+      ref={
+        {
+          current: { dismiss, snapToIndex: jest.fn() },
+        } as never
+      }
+      page={selectedPage}
+      pages={pages}
+      onApplyNearbyOrder={jest.fn()}
+      onMoveToPosition={onMove}
+      onDismiss={jest.fn()}
+    />
+  );
 
 describe('ComposerPageOrderSheet', () => {
-  it('rejects invalid or unchanged values and confirms once', async () => {
-    const onMove = jest.fn();
+  it('opens directly in the nearby grid without a method menu', async () => {
+    const screen = await renderSheet();
+
+    expect(screen.getByTestId('nearby-grid')).toBeTruthy();
+    expect(screen.getByText('5:page-3')).toBeTruthy();
+    expect(
+      screen.getByText('Reordenar cerca de la página 3')
+    ).toBeTruthy();
+    expect(screen.queryByText('Reordenar cercanas')).toBeNull();
+    expect(screen.queryByPlaceholderText('Entre 1 y 5')).toBeNull();
+  });
+
+  it('passes at most nine nearby pages to the temporary grid', async () => {
+    const longDocument = Array.from({ length: 20 }, (_, index) =>
+      page(`long-${index + 1}`, index + 1)
+    );
     const screen = await render(
       <ComposerPageOrderSheet
-        ref={{ current: { dismiss: jest.fn() } } as never}
-        page={selectedPage}
-        pageCount={5}
-        onMoveToPosition={onMove}
+        ref={
+          {
+            current: { dismiss: jest.fn(), snapToIndex: jest.fn() },
+          } as never
+        }
+        page={longDocument[9]}
+        pages={longDocument}
+        onApplyNearbyOrder={jest.fn()}
+        onMoveToPosition={jest.fn()}
         onDismiss={jest.fn()}
       />
+    );
+
+    expect(screen.getByText('9:long-10')).toBeTruthy();
+  });
+
+  it('opens the numeric form directly from the grid action', async () => {
+    const screen = await renderSheet();
+
+    await fireEvent.press(
+      screen.getByText('Mover página 3 a otra posición…')
+    );
+
+    expect(screen.queryByTestId('nearby-grid')).toBeNull();
+    expect(screen.getByText('Mover página 3')).toBeTruthy();
+    expect(screen.getByPlaceholderText('Entre 1 y 5')).toBeTruthy();
+  });
+
+  it('closes the nearby grid from the header without applying an order', async () => {
+    const dismiss = jest.fn();
+    const screen = await renderSheet(jest.fn(), dismiss);
+
+    await fireEvent.press(screen.getByLabelText('Cerrar'));
+
+    expect(dismiss).toHaveBeenCalledTimes(1);
+  });
+
+  it('closes and consumes the Android hardware-back event', async () => {
+    const dismiss = jest.fn();
+    const addListener = jest.spyOn(BackHandler, 'addEventListener');
+    const screen = await renderSheet(jest.fn(), dismiss);
+    const lastCall =
+      addListener.mock.calls[addListener.mock.calls.length - 1];
+    const handler = lastCall?.[1];
+
+    expect(handler?.({} as never)).toBe(true);
+    expect(dismiss).toHaveBeenCalledTimes(1);
+
+    await screen.unmount();
+    addListener.mockRestore();
+  });
+
+  it('rejects invalid or unchanged values and confirms once', async () => {
+    const onMove = jest.fn();
+    const screen = await renderSheet(onMove);
+    await fireEvent.press(
+      screen.getByText('Mover página 3 a otra posición…')
     );
     const input = screen.getByPlaceholderText('Entre 1 y 5');
     const moveButton = screen.getByText('Mover');
@@ -117,27 +234,26 @@ describe('ComposerPageOrderSheet', () => {
     }
     expect(onMove).not.toHaveBeenCalled();
 
-    await fireEvent.changeText(input, '5');
-    expect(
-      screen.getByText('La página quedará en la posición 5.')
-    ).toBeTruthy();
+    for (const valid of ['1', '2', '5']) {
+      await fireEvent.changeText(input, valid);
+      expect(
+        screen.getByText(
+          `La página quedará en la posición ${valid}.`
+        )
+      ).toBeTruthy();
+    }
     await fireEvent.press(moveButton);
 
     expect(onMove).toHaveBeenCalledTimes(1);
     expect(onMove).toHaveBeenCalledWith('page-3', 5);
   });
 
-  it('cancels without moving the page', async () => {
+  it('cancels the numeric form without moving the page', async () => {
     const dismiss = jest.fn();
     const onMove = jest.fn();
-    const screen = await render(
-      <ComposerPageOrderSheet
-        ref={{ current: { dismiss } } as never}
-        page={selectedPage}
-        pageCount={5}
-        onMoveToPosition={onMove}
-        onDismiss={jest.fn()}
-      />
+    const screen = await renderSheet(onMove, dismiss);
+    await fireEvent.press(
+      screen.getByText('Mover página 3 a otra posición…')
     );
 
     await fireEvent.press(screen.getByText('Cancelar'));

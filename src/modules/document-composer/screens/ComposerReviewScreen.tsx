@@ -10,13 +10,11 @@ import {
   Pressable,
   TextInput,
   View,
-  type LayoutChangeEvent,
   type ListRenderItem,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import type { StaticScreenProps } from '@react-navigation/native';
-import Animated from 'react-native-reanimated';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { toast } from 'sonner-native';
 import AppHeader from '@/components/navigation/AppHeader';
@@ -28,18 +26,15 @@ import type { MainAppNavigatorNavigationProp } from '@/app/navigation/MainAppNav
 import { asFileUri } from '@/infrastructure/storage/fileSystemUtils';
 import ContractsService from '@/modules/contracts/services/ContractsService';
 import ComposerPageOrderSheet from '../components/ComposerPageOrderSheet';
-import LocalDraggablePageListItem from '../components/LocalDraggablePageListItem';
-import LocalPageDragLayer from '../components/LocalPageDragLayer';
+import DocumentPageListItem from '../components/DocumentPageListItem';
 import {
   DOCUMENT_PAGE_CARD_GAP,
   DOCUMENT_PAGE_CARD_HEIGHT,
   DOCUMENT_PAGE_ITEM_EXTENT,
-  LOCAL_PAGE_DROP_AREA_FALLBACK_HEIGHT,
 } from '../constants/documentComposerLayout';
 import DocumentComposerService from '../services/DocumentComposerService';
 import { pickPdfDocument } from '../services/documentPickerService';
 import { scanDocuments } from '../services/scannerService';
-import { useLocalPageDrag } from '../hooks/useLocalPageDrag';
 import { useDocumentComposerStore } from '../state/useDocumentComposerStore';
 import type {
   ComposerArtifact,
@@ -55,18 +50,15 @@ type Props = StaticScreenProps<{
   resumeSessionId?: string;
 }>;
 
-const EMPTY_PAGES: ComposerPage[] = [];
 const PageSeparator = () => <View style={styles.pageSeparator} />;
 
 const ComposerReviewScreen = ({ route }: Props) => {
   const navigation = useNavigation<MainAppNavigatorNavigationProp>();
   const { theme } = useUnistyles();
   const started = useRef(false);
+  const listRef = useRef<FlatList<ComposerPage>>(null);
   const orderSheetRef = useRef<BottomSheetModal>(null);
   const [orderPageId, setOrderPageId] = useState<string>();
-  const [actionsHeight, setActionsHeight] = useState(
-    LOCAL_PAGE_DROP_AREA_FALLBACK_HEIGHT
-  );
   const session = useDocumentComposerStore(state => state.session);
   const createSession = useDocumentComposerStore(state => state.createSession);
   const setSourcePdf = useDocumentComposerStore(state => state.setSourcePdf);
@@ -76,8 +68,8 @@ const ComposerReviewScreen = ({ route }: Props) => {
   const replaceWithScannedPaths = useDocumentComposerStore(
     state => state.replaceWithScannedPaths
   );
-  const applyLocalPageMove = useDocumentComposerStore(
-    state => state.applyLocalPageMove
+  const applyNearbyPageOrder = useDocumentComposerStore(
+    state => state.applyNearbyPageOrder
   );
   const moveToPosition = useDocumentComposerStore(
     state => state.moveToPosition
@@ -89,26 +81,9 @@ const ComposerReviewScreen = ({ route }: Props) => {
   const loadDraft = useDocumentComposerStore(state => state.loadDraft);
   const clearSession = useDocumentComposerStore(state => state.clearSession);
 
-  const requestMoveToPosition = useCallback((pageId: string) => {
+  const openPageOrder = useCallback((pageId: string) => {
     setOrderPageId(pageId);
   }, []);
-  const localDrag = useLocalPageDrag({
-    pages: session?.pages ?? EMPTY_PAGES,
-    contentPadding: theme.spacing.md,
-    onCommit: applyLocalPageMove,
-    onRequestMoveToPosition: requestMoveToPosition,
-  });
-  const handleActionsLayout = useCallback(
-    (event: LayoutChangeEvent) => {
-      const height = event.nativeEvent.layout.height;
-      if (!Number.isFinite(height) || height <= 0) return;
-      localDrag.dragContext.dropBarHeight.value = height;
-      setActionsHeight(current =>
-        current === height ? current : height
-      );
-    },
-    [localDrag.dragContext.dropBarHeight]
-  );
 
   const choosePdf = useCallback(async () => {
     const selected = await pickPdfDocument();
@@ -264,33 +239,18 @@ const ComposerReviewScreen = ({ route }: Props) => {
   };
 
   const renderPage: ListRenderItem<ComposerPage> = useCallback(
-    ({ item, index }) => {
-      const activeDrag = localDrag.dragSession;
-      const isPlaceholder = activeDrag?.pageId === item.id;
-      return (
-        <LocalDraggablePageListItem
-          page={item}
-          pageIndex={index}
-          pageCount={session?.pages.length ?? 0}
-          artifactId={session?.sourceArtifact?.id}
-          isPlaceholder={isPlaceholder}
-          isHighlighted={localDrag.highlightedPageId === item.id}
-          activeOriginalIndex={activeDrag?.originalIndex}
-          placeholderPosition={
-            isPlaceholder ? activeDrag.draftIndex + 1 : undefined
-          }
-          dragContext={localDrag.dragContext}
-          onView={viewPage}
-          onDelete={confirmDelete}
-        />
-      );
-    },
+    ({ item }) => (
+      <DocumentPageListItem
+        page={item}
+        artifactId={session?.sourceArtifact?.id}
+        onView={viewPage}
+        onDelete={confirmDelete}
+        onOrder={openPageOrder}
+      />
+    ),
     [
       confirmDelete,
-      localDrag.dragContext,
-      localDrag.dragSession,
-      localDrag.highlightedPageId,
-      session?.pages.length,
+      openPageOrder,
       session?.sourceArtifact?.id,
       viewPage,
     ]
@@ -300,14 +260,14 @@ const ComposerReviewScreen = ({ route }: Props) => {
     (pageId: string, targetPosition: number) => {
       moveToPosition(pageId, targetPosition);
       requestAnimationFrame(() => {
-        localDrag.listRef.current?.scrollToIndex({
+        listRef.current?.scrollToIndex({
           index: targetPosition - 1,
           animated: true,
           viewPosition: 0.5,
         });
       });
     },
-    [localDrag.listRef, moveToPosition]
+    [moveToPosition]
   );
 
   if (!session) return <AppFlex flex={1} style={styles.screen} />;
@@ -316,8 +276,6 @@ const ComposerReviewScreen = ({ route }: Props) => {
   const orderPage = orderPageId
     ? session.pages.find(page => page.id === orderPageId)
     : undefined;
-  const isDragging = Boolean(localDrag.dragLayerSession);
-
   return (
     <AppFlex flex={1} style={styles.screen}>
       <AppHeader
@@ -372,55 +330,28 @@ const ComposerReviewScreen = ({ route }: Props) => {
         </AppFlex>
       ) : null}
 
-      <Animated.View
-        ref={localDrag.dragContext.listViewportRef}
-        collapsable={false}
-        onLayout={localDrag.onListLayout}
-        style={styles.listViewport}
-      >
-        <FlatList
-          ref={localDrag.listRef}
-          data={session.pages}
-          extraData={
-            localDrag.dragSession ?? localDrag.highlightedPageId
-          }
-          keyExtractor={page => page.id}
-          renderItem={renderPage}
-          getItemLayout={(_data, index) => ({
-            length: DOCUMENT_PAGE_CARD_HEIGHT,
-            offset:
-              theme.spacing.md + DOCUMENT_PAGE_ITEM_EXTENT * index,
-            index,
-          })}
-          ItemSeparatorComponent={PageSeparator}
-          initialNumToRender={6}
-          maxToRenderPerBatch={5}
-          windowSize={5}
-          updateCellsBatchingPeriod={50}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-          scrollEnabled={!localDrag.dragSession}
-          scrollEventThrottle={32}
-          onScroll={localDrag.onListScroll}
-          style={styles.list}
-          contentContainerStyle={styles.listContent}
-        />
-      </Animated.View>
+      <FlatList
+        ref={listRef}
+        data={session.pages}
+        keyExtractor={page => page.id}
+        renderItem={renderPage}
+        getItemLayout={(_data, index) => ({
+          length: DOCUMENT_PAGE_CARD_HEIGHT,
+          offset: theme.spacing.md + DOCUMENT_PAGE_ITEM_EXTENT * index,
+          index,
+        })}
+        ItemSeparatorComponent={PageSeparator}
+        initialNumToRender={6}
+        maxToRenderPerBatch={5}
+        windowSize={5}
+        updateCellsBatchingPeriod={50}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        style={styles.list}
+        contentContainerStyle={styles.listContent}
+      />
 
-      <AppFlex
-        p="md"
-        gap="sm"
-        pointerEvents={isDragging ? 'none' : 'auto'}
-        accessibilityElementsHidden={isDragging}
-        importantForAccessibility={
-          isDragging ? 'no-hide-descendants' : 'auto'
-        }
-        onLayout={handleActionsLayout}
-        style={[
-          styles.actions,
-          isDragging && styles.hiddenActions,
-        ]}
-      >
+      <AppFlex p="md" gap="sm" style={styles.actions}>
         <AppFlex direction="row" gap="sm">
           <Pressable
             onPress={() => void startScanner(true)}
@@ -476,18 +407,16 @@ const ComposerReviewScreen = ({ route }: Props) => {
 
       {orderPage ? (
         <ComposerPageOrderSheet
+          key={orderPage.id}
           ref={orderSheetRef}
           page={orderPage}
-          pageCount={session.pages.length}
+          pages={session.pages}
+          artifactId={session.sourceArtifact?.id}
+          onApplyNearbyOrder={applyNearbyPageOrder}
           onMoveToPosition={handleMoveToPosition}
           onDismiss={() => setOrderPageId(undefined)}
         />
       ) : null}
-      <LocalPageDragLayer
-        context={localDrag.dragContext}
-        session={localDrag.dragLayerSession}
-        dropAreaHeight={actionsHeight}
-      />
     </AppFlex>
   );
 };
@@ -512,7 +441,6 @@ const styles = StyleSheet.create(theme => ({
   error: {
     backgroundColor: theme.colors.surface.status.error,
   },
-  listViewport: { flex: 1 },
   list: { flex: 1 },
   listContent: { padding: theme.spacing.md, paddingBottom: theme.spacing.xl },
   pageSeparator: { height: DOCUMENT_PAGE_CARD_GAP },
@@ -521,7 +449,6 @@ const styles = StyleSheet.create(theme => ({
     borderTopWidth: theme.border.hairline,
     borderTopColor: theme.colors.border.subtle,
   },
-  hiddenActions: { opacity: 0 },
   secondaryButton: {
     minHeight: 42,
     flex: 1,

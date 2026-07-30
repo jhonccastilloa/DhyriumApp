@@ -19,7 +19,7 @@ type AppDocumentPageCardProps = {
   isThumbnailLoading: boolean;
   onView: (pageId: string) => void;
   onDelete: (pageId: string) => void;
-  dragHandle: ReactNode;
+  orderControl: ReactNode;
   style?: StyleProp<ViewStyle>;
 };
 
@@ -29,7 +29,7 @@ const AppDocumentPageCard = ({
   isThumbnailLoading,
   onView,
   onDelete,
-  dragHandle,
+  orderControl,
   style,
 }: AppDocumentPageCardProps) => {
   const { theme } = useUnistyles();
@@ -93,7 +93,7 @@ const AppDocumentPageCard = ({
             mColor={theme.colors.text.error}
           />
         </Pressable>
-        {dragHandle}
+        {orderControl}
       </View>
     </View>
   );
