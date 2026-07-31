@@ -6,8 +6,11 @@ import AppIcon from '@/components/icons/AppIcon';
 import AppFlex from '@/components/layout/AppFlex';
 import AppText from '@/components/typography/AppText';
 import type { MainAppNavigatorNavigationProp } from '@/app/navigation/MainAppNavigator';
+import DocumentComposerService from '../services/DocumentComposerService';
 import { useDocumentComposerStore } from '../state/useDocumentComposerStore';
 import type { ComposerSession } from '../types/documentComposer.types';
+
+const DraftSeparator = () => <View style={styles.separator} />;
 
 const ComposerDraftsScreen = () => {
   const navigation = useNavigation<MainAppNavigatorNavigationProp>();
@@ -24,7 +27,14 @@ const ComposerDraftsScreen = () => {
         {
           text: 'Eliminar',
           style: 'destructive',
-          onPress: () => void removeDraft(draft.id),
+          onPress: () => {
+            (async () => {
+              await DocumentComposerService.cleanupTemporarySources(
+                draft.pdfSources,
+              );
+              await removeDraft(draft.id);
+            })().catch(() => undefined);
+          },
         },
       ]
     );
@@ -32,12 +42,16 @@ const ComposerDraftsScreen = () => {
 
   return (
     <AppFlex flex={1} style={styles.screen}>
-      <AppHeader showBack title="Borradores" count={drafts.length} />
+      <AppHeader
+        showBack
+        title="Documentos en progreso"
+        count={drafts.length}
+      />
       <FlatList
         data={drafts}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.content}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
+        ItemSeparatorComponent={DraftSeparator}
         renderItem={({ item }) => (
           <Pressable
             onPress={() =>
@@ -88,10 +102,10 @@ const ComposerDraftsScreen = () => {
             style={styles.empty}
           >
             <AppText variant="title.m" color="headings">
-              No hay borradores
+              No hay documentos en progreso
             </AppText>
             <AppText variant="text.sm.regular" color="details" align="center">
-              Los borradores reales aparecerán aquí cuando guardes una sesión.
+              Los documentos aparecerán aquí cuando guardes un borrador.
             </AppText>
           </AppFlex>
         }

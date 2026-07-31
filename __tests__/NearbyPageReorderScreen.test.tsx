@@ -167,11 +167,13 @@ const createSession = (): ComposerSession => ({
   mode: 'tool',
   source: 'scanner',
   name: 'Document',
+  pdfSources: [],
   pages: [page('a', 1), page('b', 2), page('c', 3)],
   status: 'reviewing',
   uploadProgress: 0,
   createdAt: '2026-07-30T00:00:00.000Z',
   updatedAt: '2026-07-30T00:00:00.000Z',
+  contentUpdatedAt: '2026-07-30T00:00:00.000Z',
 });
 
 const renderScreen = () =>

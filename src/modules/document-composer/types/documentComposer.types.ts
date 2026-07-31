@@ -1,5 +1,6 @@
 export type ComposerMode = 'tool' | 'contract';
 export type ComposerSource = 'scanner' | 'pdf' | 'mixed';
+export type ComposerEntrySource = Exclude<ComposerSource, 'mixed'>;
 export type ComposerPageOrigin = 'scanned' | 'originalPdf';
 export type LegibilityStatus = 'pending' | 'legible';
 
@@ -21,6 +22,7 @@ export type ComposerPage = {
   order: number;
   legibilityStatus: LegibilityStatus;
   origin: ComposerPageOrigin;
+  pdfSourceId?: string;
   originalPageNumber?: number;
   createdAt: string;
   ownedBySession: boolean;
@@ -52,6 +54,15 @@ export type ComposerArtifact = {
   downloadUrl: string;
 };
 
+export type ComposerPdfSource = {
+  id: string;
+  uri: string;
+  fileName: string;
+  artifact: ComposerArtifact;
+  createdAt: string;
+  ownedBySession: boolean;
+};
+
 export type ComposerSession = {
   id: string;
   mode: ComposerMode;
@@ -59,7 +70,7 @@ export type ComposerSession = {
   name: string;
   destination?: ComposerDestination;
   isEditingExisting?: boolean;
-  sourceArtifact?: ComposerArtifact;
+  pdfSources: ComposerPdfSource[];
   pages: ComposerPage[];
   status: ComposerSessionStatus;
   uploadProgress: number;
@@ -68,4 +79,7 @@ export type ComposerSession = {
   errorMessage?: string;
   createdAt: string;
   updatedAt: string;
+  contentUpdatedAt: string;
+  savedContentAt?: string;
+  detachedLocalUris?: string[];
 };

@@ -109,8 +109,8 @@ const ContractMethodSheet = ({
           : null}
         {uploaded
           ? action(
-              'Organizar o reemplazar',
-              'Crea primero una nueva versión sin alterar la actual.',
+              'Editar PDF actual',
+              'Reordena y combina páginas sin alterar la versión publicada.',
               'pencilSimple',
               onOrganize
             )

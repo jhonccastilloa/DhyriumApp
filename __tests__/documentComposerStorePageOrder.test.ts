@@ -1,15 +1,18 @@
 import { useDocumentComposerStore } from '@/modules/document-composer/state/useDocumentComposerStore';
 import type {
+  ComposerArtifact,
   ComposerPage,
   ComposerSession,
 } from '@/modules/document-composer/types/documentComposer.types';
+import { FileSystem } from 'react-native-file-access';
 
 jest.mock('react-native-file-access', () => ({
   Dirs: { DocumentDir: '/documents' },
   FileSystem: {
-    cp: jest.fn(),
-    exists: jest.fn(),
-    unlink: jest.fn(),
+    cp: jest.fn(() => Promise.resolve()),
+    exists: jest.fn(() => Promise.resolve(true)),
+    mkdir: jest.fn(() => Promise.resolve()),
+    unlink: jest.fn(() => Promise.resolve()),
   },
 }));
 
@@ -39,6 +42,7 @@ const createSession = (): ComposerSession => ({
   mode: 'tool',
   source: 'scanner',
   name: 'Document',
+  pdfSources: [],
   pages: [
     page('a', 1),
     page('b', 2),
@@ -50,11 +54,29 @@ const createSession = (): ComposerSession => ({
   uploadProgress: 0,
   createdAt: '2026-07-23T00:00:00.000Z',
   updatedAt: '2026-07-23T00:00:00.000Z',
+  contentUpdatedAt: '2026-07-23T00:00:00.000Z',
+});
+
+const artifact = (id: string, pageCount = 1): ComposerArtifact => ({
+  id,
+  name: `${id}.pdf`,
+  status: 'TEMPORARY',
+  type: 'ORIGINAL_PDF',
+  mimeType: 'application/pdf',
+  sizeBytes: 100,
+  pageCount,
+  createdAt: '2026-07-23T00:00:00.000Z',
+  expiresAt: '2026-07-24T00:00:00.000Z',
+  downloadUrl: `/artifacts/${id}`,
 });
 
 describe('document composer nearby page order store action', () => {
   beforeEach(() => {
-    useDocumentComposerStore.setState({ session: createSession() });
+    jest.clearAllMocks();
+    useDocumentComposerStore.setState({
+      session: createSession(),
+      drafts: [],
+    });
   });
 
   it('updates Zustand once for a valid complete order', () => {
@@ -135,5 +157,117 @@ describe('document composer nearby page order store action', () => {
         .session!.pages.map(item => item.id)
     ).toEqual(['a', 'b', 'c', 'd', 'e']);
     unsubscribe();
+  });
+
+  it('combines multiple PDFs and scans while preserving the first name', async () => {
+    const store = useDocumentComposerStore.getState();
+    store.createSession({ mode: 'tool', source: 'pdf' });
+    await store.appendPdfSource({
+      uri: 'file:///first.pdf',
+      fileName: 'Primero.pdf',
+      artifact: artifact('first'),
+    });
+    await useDocumentComposerStore.getState().appendPdfSource({
+      uri: 'file:///second.pdf',
+      fileName: 'Segundo.pdf',
+      artifact: artifact('second'),
+    });
+    await useDocumentComposerStore
+      .getState()
+      .addScannedPaths(['/scanner/page.jpg']);
+
+    const session = useDocumentComposerStore.getState().session!;
+    expect(session.name).toBe('Primero');
+    expect(session.source).toBe('mixed');
+    expect(session.pdfSources.map(source => source.artifact.id)).toEqual([
+      'first',
+      'second',
+    ]);
+    expect(session.pages.map(item => item.origin)).toEqual([
+      'originalPdf',
+      'originalPdf',
+      'scanned',
+    ]);
+  });
+
+  it('discards new edits without deleting files from the saved draft', async () => {
+    const store = useDocumentComposerStore.getState();
+    store.createSession({ mode: 'tool', source: 'pdf' });
+    await store.appendPdfSource({
+      uri: 'file:///saved.pdf',
+      fileName: 'Guardado.pdf',
+      artifact: artifact('saved'),
+    });
+    const savedUri =
+      useDocumentComposerStore.getState().session!.pdfSources[0].uri;
+    useDocumentComposerStore.getState().saveDraft();
+    await useDocumentComposerStore.getState().appendPdfSource({
+      uri: 'file:///new.pdf',
+      fileName: 'Nuevo.pdf',
+      artifact: artifact('new'),
+    });
+    const newUri =
+      useDocumentComposerStore.getState().session!.pdfSources[1].uri;
+    jest.clearAllMocks();
+
+    await useDocumentComposerStore.getState().discardSession();
+
+    expect(FileSystem.unlink).toHaveBeenCalledWith(
+      newUri.replace(/^file:\/\//, ''),
+    );
+    expect(FileSystem.unlink).not.toHaveBeenCalledWith(
+      savedUri.replace(/^file:\/\//, ''),
+    );
+    expect(useDocumentComposerStore.getState().drafts).toHaveLength(1);
+    expect(useDocumentComposerStore.getState().session).toBeNull();
+  });
+
+  it('keeps the current content when a replacement PDF cannot be copied', async () => {
+    const store = useDocumentComposerStore.getState();
+    store.createSession({ mode: 'tool', source: 'pdf' });
+    await store.appendPdfSource({
+      uri: 'file:///current.pdf',
+      fileName: 'Actual.pdf',
+      artifact: artifact('current'),
+    });
+    const before = useDocumentComposerStore.getState().session;
+    (FileSystem.cp as jest.Mock).mockRejectedValueOnce(
+      new Error('copy failed'),
+    );
+
+    await expect(
+      useDocumentComposerStore.getState().replaceWithPdfSource({
+        uri: 'file:///replacement.pdf',
+        fileName: 'Reemplazo.pdf',
+        artifact: artifact('replacement'),
+      }),
+    ).rejects.toThrow('copy failed');
+
+    expect(useDocumentComposerStore.getState().session).toBe(before);
+  });
+
+  it('rejects additions that would exceed the backend page limit', async () => {
+    const store = useDocumentComposerStore.getState();
+    store.createSession({ mode: 'tool', source: 'pdf' });
+    await store.appendPdfSource({
+      uri: 'file:///full.pdf',
+      fileName: 'Completo.pdf',
+      artifact: artifact('full', 200),
+    });
+
+    await expect(
+      useDocumentComposerStore.getState().appendPdfSource({
+        uri: 'file:///extra.pdf',
+        fileName: 'Extra.pdf',
+        artifact: artifact('extra'),
+      }),
+    ).rejects.toThrow('El documento no puede superar 200 páginas.');
+
+    expect(
+      useDocumentComposerStore.getState().session!.pdfSources,
+    ).toHaveLength(1);
+    expect(useDocumentComposerStore.getState().session!.pages).toHaveLength(
+      200,
+    );
   });
 });

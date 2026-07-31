@@ -142,6 +142,18 @@ describe('ComposerReview reorder structure', () => {
     expect(nearbyScreen).toContain('usePreventRemove(');
   });
 
+  it('offers mixed sources and protects unsaved editor changes', () => {
+    expect(reviewScreen).toContain('ComposerSourceSheet');
+    expect(reviewScreen).toContain("openSourceSheet('append')");
+    expect(reviewScreen).toContain("openSourceSheet('replace')");
+    expect(reviewScreen).toContain("runSourceAction('scanner'");
+    expect(reviewScreen).toContain("runSourceAction('pdf'");
+    expect(reviewScreen).toContain('usePreventRemove(');
+    expect(reviewScreen).toContain("'Guardar borrador'");
+    expect(reviewScreen).toContain("'Descartar'");
+    expect(reviewScreen).toContain("'Continuar editando'");
+  });
+
   it('preserves the document aspect ratio in thumbnails', () => {
     expect(thumbnail).toContain("resizeMode: 'contain'");
   });

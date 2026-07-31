@@ -151,6 +151,7 @@ const renderGrid = async (
       pages={pages}
       rangeStart={1}
       selectedPageId="b"
+      pdfSources={[]}
       onOrderChange={onOrderChange}
     />
   );
@@ -244,6 +245,7 @@ describe('NearbyPageReorderGrid', () => {
         pages={[source[1], source[2], source[0]]}
         rangeStart={10}
         selectedPageId="b"
+        pdfSources={[]}
         onOrderChange={jest.fn()}
       />
     );
@@ -262,6 +264,7 @@ describe('NearbyPageReorderGrid', () => {
         pages={reordered}
         rangeStart={1}
         selectedPageId="b"
+        pdfSources={[]}
         onOrderChange={onOrderChange}
       />
     );

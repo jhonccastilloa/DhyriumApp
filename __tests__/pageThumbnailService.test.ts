@@ -2,6 +2,7 @@ import type { FetchResult } from 'react-native-file-access';
 import { FileSystem } from 'react-native-file-access';
 import StorageAdapter from '@/infrastructure/storage/StorageAdapter';
 import PrivateCacheAdapter from '@/infrastructure/storage/PrivateCacheAdapter';
+import { env } from '@/config/env';
 import { AUTH_STORAGE_KEYS } from '@/modules/auth/constants/authStorageKeys';
 import {
   buildPageThumbnailUrl,
@@ -67,7 +68,7 @@ describe('document page thumbnail service', () => {
 
   it('builds the authenticated endpoint URL', () => {
     expect(buildPageThumbnailUrl('artifact/42', 8)).toBe(
-      'http://127.0.0.1:8013/api/v1/document-composer/artifacts/artifact%2F42/pages/8/thumbnail'
+      `${env.API_BASE_URL}/document-composer/artifacts/artifact%2F42/pages/8/thumbnail`
     );
   });
 

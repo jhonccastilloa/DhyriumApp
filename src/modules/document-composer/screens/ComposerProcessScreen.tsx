@@ -20,24 +20,47 @@ const ComposerProcessScreen = () => {
   const started = useRef(false);
   const session = useDocumentComposerStore(state => state.session);
   const updateProcess = useDocumentComposerStore(state => state.updateProcess);
+  const refreshPdfSourceArtifact = useDocumentComposerStore(
+    state => state.refreshPdfSourceArtifact
+  );
 
   const run = useCallback(async () => {
-    const current = useDocumentComposerStore.getState().session;
+    let current = useDocumentComposerStore.getState().session;
     if (!current) return;
     try {
       let artifact = current.artifact;
-      const canUseOriginalDirectly =
-        current.mode === 'contract' &&
-        !current.isEditingExisting &&
-        current.pages.every(
-          (page, index) =>
-            page.origin === 'originalPdf' &&
-            page.originalPageNumber === index + 1
-        );
 
       if (!artifact) {
-        if (canUseOriginalDirectly && current.sourceArtifact) {
-          artifact = current.sourceArtifact;
+        const refreshed =
+          await DocumentComposerService.refreshExpiredPdfSources(
+            current,
+            progress =>
+              updateProcess({
+                status: 'transferring',
+                uploadProgress: progress,
+              })
+          );
+        refreshed.forEach(({ sourceId, artifact: refreshedArtifact }) =>
+          refreshPdfSourceArtifact(sourceId, refreshedArtifact)
+        );
+        current = useDocumentComposerStore.getState().session;
+        if (!current) return;
+
+        const directSource = current.pdfSources[0];
+        const canUseOriginalDirectly =
+          current.mode === 'contract' &&
+          !current.isEditingExisting &&
+          current.pdfSources.length === 1 &&
+          current.pages.length === directSource?.artifact.pageCount &&
+          current.pages.every(
+            (page, index) =>
+              page.origin === 'originalPdf' &&
+              page.pdfSourceId === directSource?.id &&
+              page.originalPageNumber === index + 1
+          );
+
+        if (canUseOriginalDirectly && directSource) {
+          artifact = directSource.artifact;
         } else {
           updateProcess({
             status: 'transferring',
@@ -96,12 +119,16 @@ const ComposerProcessScreen = () => {
             : 'No se pudo completar el proceso.'),
       });
     }
-  }, [navigation, updateProcess]);
+  }, [
+    navigation,
+    refreshPdfSourceArtifact,
+    updateProcess,
+  ]);
 
   useEffect(() => {
     if (started.current) return;
     started.current = true;
-    void run();
+    run().catch(() => undefined);
   }, [run]);
 
   if (!session) return <AppFlex flex={1} style={styles.screen} />;
@@ -243,7 +270,7 @@ const ComposerProcessScreen = () => {
             }
             onPress={() => {
               started.current = true;
-              void run();
+              run().catch(() => undefined);
             }}
           />
         ) : null}

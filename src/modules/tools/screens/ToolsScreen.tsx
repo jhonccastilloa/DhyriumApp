@@ -21,7 +21,7 @@ const ToolsScreen = () => {
   );
 
   useEffect(() => {
-    void pruneMissingDrafts();
+    pruneMissingDrafts().catch(() => undefined);
   }, [pruneMissingDrafts]);
 
   const openComposer = (source: 'scanner' | 'pdf') =>
@@ -44,64 +44,84 @@ const ToolsScreen = () => {
             Flujos reutilizables, sin asociarlos a un contrato.
           </AppText>
         </AppFlex>
-        <AppCard
-          emphasized
-          onPress={() => openComposer('scanner')}
-          style={styles.toolCard}
-        >
-          <AppFlex
-            size={50}
-            align="center"
-            justify="center"
-            style={styles.iconSurface}
-          >
-            <AppIcon
-              name="scan"
-              size={27}
-              mColor={theme.colors.navigation.active}
-            />
-          </AppFlex>
-          <AppFlex flex={1} gap="xs">
+        <AppCard emphasized style={styles.composerCard}>
+          <AppFlex gap="xs">
             <AppText variant="title.m" color="headings">
-              Escanear a PDF
+              Crear y editar PDF
             </AppText>
             <AppText variant="text.sm.regular" color="details">
-              Captura, ordena y genera un PDF.
+              Combina escaneos y archivos PDF en un solo documento.
             </AppText>
           </AppFlex>
-          <AppIcon
-            name="caretRight"
-            size={20}
-            mColor={theme.colors.navigation.active}
-          />
-        </AppCard>
-        <AppCard onPress={() => openComposer('pdf')} style={styles.toolCard}>
-          <AppFlex
-            size={50}
-            align="center"
-            justify="center"
-            style={styles.iconSurface}
-          >
-            <AppIcon
-              name="filePdf"
-              size={27}
-              mColor={theme.colors.icon.secondary}
-              variant="featured"
-            />
+          <AppFlex gap="sm">
+            <Pressable
+              onPress={() => openComposer('scanner')}
+              style={({ pressed }) => [
+                styles.sourceAction,
+                pressed && styles.pressed,
+              ]}
+            >
+              <AppFlex
+                size={46}
+                align="center"
+                justify="center"
+                style={styles.iconSurface}
+              >
+                <AppIcon
+                  name="scan"
+                  size={25}
+                  mColor={theme.colors.navigation.active}
+                />
+              </AppFlex>
+              <AppFlex flex={1} gap="xs">
+                <AppText variant="text.md.bold" color="headings">
+                  Escanear páginas
+                </AppText>
+                <AppText variant="text.sm.regular" color="details">
+                  Empieza capturando un documento con la cámara.
+                </AppText>
+              </AppFlex>
+              <AppIcon
+                name="caretRight"
+                size={20}
+                mColor={theme.colors.navigation.active}
+              />
+            </Pressable>
+            <Pressable
+              onPress={() => openComposer('pdf')}
+              style={({ pressed }) => [
+                styles.sourceAction,
+                pressed && styles.pressed,
+              ]}
+            >
+              <AppFlex
+                size={46}
+                align="center"
+                justify="center"
+                style={styles.iconSurface}
+              >
+                <AppIcon
+                  name="filePdf"
+                  size={25}
+                  mColor={theme.colors.icon.secondary}
+                  variant="featured"
+                />
+              </AppFlex>
+              <AppFlex flex={1} gap="xs">
+                <AppText variant="text.md.bold" color="headings">
+                  Elegir un PDF
+                </AppText>
+                <AppText variant="text.sm.regular" color="details">
+                  Organiza un archivo y agrega más páginas.
+                </AppText>
+              </AppFlex>
+              <AppIcon
+                name="caretRight"
+                size={20}
+                mColor={theme.colors.icon.secondary}
+              />
+            </Pressable>
           </AppFlex>
-          <AppFlex flex={1} gap="xs">
-            <AppText variant="title.m" color="headings">
-              Organizar un PDF
-            </AppText>
-            <AppText variant="text.sm.regular" color="details">
-              Reordena, elimina o agrega páginas.
-            </AppText>
-          </AppFlex>
-          <AppIcon
-            name="caretRight"
-            size={20}
-            mColor={theme.colors.icon.secondary}
-          />
         </AppCard>
 
         {drafts.length > 0 ? (
@@ -126,7 +146,7 @@ const ToolsScreen = () => {
                 color="body"
                 style={styles.toolCopy}
               >
-                Borradores de escaneo
+                Documentos en progreso
               </AppText>
               <AppFlex
                 height={26}
@@ -152,12 +172,18 @@ const styles = StyleSheet.create(theme => ({
   },
   content: { padding: theme.spacing.md, gap: theme.spacing.md },
   intro: { marginBottom: theme.spacing.sm },
-  toolCard: {
-    minHeight: 108,
+  composerCard: {
     padding: theme.spacing.md,
+    gap: theme.spacing.md,
+  },
+  sourceAction: {
+    minHeight: 78,
+    padding: theme.spacing.sm,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.spacing.md,
+    gap: theme.spacing.sm,
+    borderRadius: theme.radius.md,
+    backgroundColor: theme.colors.surface.background.elements,
   },
   iconSurface: {
     borderRadius: theme.radius.md,

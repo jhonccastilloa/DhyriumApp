@@ -9,9 +9,13 @@ import {
 } from 'react-native-reanimated-dnd';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import AppText from '@/components/typography/AppText';
+import { getPagePdfSource } from '../domain/composerSources';
 import { resolvePageOrderFromPositions } from '../domain/pageOrder';
 import { usePageThumbnail } from '../hooks/usePageThumbnail';
-import type { ComposerPage } from '../types/documentComposer.types';
+import type {
+  ComposerPage,
+  ComposerPdfSource,
+} from '../types/documentComposer.types';
 import { calculateNearbyGridLayout } from '../utils/nearbyGridLayout';
 import DocumentPageThumbnail from './DocumentPageThumbnail';
 
@@ -24,7 +28,7 @@ type GridAreaSize = {
 };
 
 type CompactPageProps = SortableGridRenderItemProps<ComposerPage> & {
-  artifactId?: string;
+  pdfSources: ComposerPdfSource[];
   proposedPosition: number;
   selectedPageId: string;
   onDrop: (
@@ -38,18 +42,19 @@ type NearbyPageReorderGridProps = {
   pages: ComposerPage[];
   rangeStart: number;
   selectedPageId: string;
-  artifactId?: string;
+  pdfSources: ComposerPdfSource[];
   onOrderChange: (orderedPageIds: string[]) => void;
 };
 
 const CompactSortablePage = ({
   item,
-  artifactId,
+  pdfSources,
   proposedPosition,
   selectedPageId,
   onDrop,
   ...gridItemProps
 }: CompactPageProps) => {
+  const artifactId = getPagePdfSource(pdfSources, item)?.artifact.id;
   const thumbnail = usePageThumbnail(item, artifactId);
   const selected = item.id === selectedPageId;
 
@@ -93,7 +98,7 @@ const NearbyPageReorderGrid = ({
   pages,
   rangeStart,
   selectedPageId,
-  artifactId,
+  pdfSources,
   onOrderChange,
 }: NearbyPageReorderGridProps) => {
   const { theme } = useUnistyles();
@@ -147,15 +152,15 @@ const NearbyPageReorderGrid = ({
       <CompactSortablePage
         key={props.id}
         {...props}
-        artifactId={artifactId}
+        pdfSources={pdfSources}
         proposedPosition={rangeStart + props.index}
         selectedPageId={selectedPageId}
         onDrop={handleDrop}
       />
     ),
     [
-      artifactId,
       handleDrop,
+      pdfSources,
       rangeStart,
       selectedPageId,
     ],

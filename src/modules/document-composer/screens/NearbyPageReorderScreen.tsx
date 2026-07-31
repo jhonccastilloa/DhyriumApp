@@ -181,7 +181,7 @@ const NearbyPageReorderScreen = ({ route }: Props) => {
           pages={orderedPages}
           rangeStart={draft.rangeStart}
           selectedPageId={route.params.pageId}
-          artifactId={session.sourceArtifact?.id}
+          pdfSources={session.pdfSources}
           onOrderChange={setOrderedPageIds}
         />
       </AppFlex>

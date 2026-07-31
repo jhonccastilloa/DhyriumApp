@@ -22,7 +22,9 @@ const ComposerResultScreen = () => {
   const { theme } = useUnistyles();
   const [sharing, setSharing] = useState(false);
   const session = useDocumentComposerStore(state => state.session);
-  const clearSession = useDocumentComposerStore(state => state.clearSession);
+  const discardSession = useDocumentComposerStore(
+    state => state.discardSession
+  );
   const artifact = session?.artifact;
 
   if (!session || !artifact)
@@ -43,9 +45,12 @@ const ComposerResultScreen = () => {
     }
   };
 
-  const finish = () => {
+  const finish = async () => {
     const destination = session.destination;
-    clearSession();
+    await DocumentComposerService.cleanupTemporarySources(
+      session.pdfSources
+    );
+    await discardSession({ preserveSavedDraft: false });
     if (destination) {
       navigation.navigate('MainTabs', {
         screen: 'Inicio',
@@ -123,11 +128,11 @@ const ComposerResultScreen = () => {
           text="Guardar o compartir"
           leftIcon="none"
           isLoading={sharing}
-          onPress={() =>
-            void sharePdf().catch(() =>
+          onPress={() => {
+            sharePdf().catch(() =>
               toast.error('No se pudo compartir el PDF.')
-            )
-          }
+            );
+          }}
         >
           <AppFlex direction="row" align="center" gap="sm">
             <AppIcon
@@ -147,7 +152,9 @@ const ComposerResultScreen = () => {
               : 'Crear otro PDF'
           }
           variant="link"
-          onPress={finish}
+          onPress={() => {
+            finish().catch(() => undefined);
+          }}
         />
       </AppFlex>
     </AppFlex>

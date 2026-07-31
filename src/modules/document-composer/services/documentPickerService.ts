@@ -5,6 +5,8 @@ import {
   pick,
   types,
 } from '@react-native-documents/picker';
+import { FileSystem } from 'react-native-file-access';
+import { stripFileScheme } from '@/infrastructure/storage/fileSystemUtils';
 
 export type PickedPdf =
   | { status: 'cancel' }
@@ -63,3 +65,6 @@ export const pickPdfDocument = async (): Promise<PickedPdf> => {
     throw error;
   }
 };
+
+export const removePickedPdfCopy = (uri: string) =>
+  FileSystem.unlink(stripFileScheme(uri)).catch(() => undefined);

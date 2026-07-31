@@ -6,8 +6,10 @@ import {
 } from '@/infrastructure/storage/fileSystemUtils';
 import api, { API_BASE_URL } from '@/infrastructure/http/apiClient';
 import { AUTH_STORAGE_KEYS } from '@/modules/auth/constants/authStorageKeys';
+import { buildDocumentManifest } from '../domain/documentManifest';
 import type {
   ComposerArtifact,
+  ComposerPdfSource,
   ComposerSession,
 } from '../types/documentComposer.types';
 
@@ -66,25 +68,7 @@ class DocumentComposerService {
     onProgress?: (progress: number) => void
   ) {
     const ordered = [...session.pages].sort((a, b) => a.order - b.order);
-    const manifest = {
-      version: 1 as const,
-      items: ordered.map(page =>
-        page.origin === 'scanned'
-          ? {
-              id: page.id,
-              kind: 'image' as const,
-              fileKey: `${page.id}.jpg`,
-              order: page.order,
-            }
-          : {
-              id: page.id,
-              kind: 'pdfPage' as const,
-              sourceArtifactId: session.sourceArtifact!.id,
-              pageNumber: page.originalPageNumber!,
-              order: page.order,
-            }
-      ),
-    };
+    const manifest = buildDocumentManifest(session);
     const data = new FormData();
     data.append('name', session.name);
     data.append(
@@ -140,6 +124,67 @@ class DocumentComposerService {
       throw new Error('No se pudo descargar el PDF.');
     }
     return target;
+  }
+
+  static async refreshExpiredPdfSources(
+    session: ComposerSession,
+    onProgress?: (progress: number) => void
+  ) {
+    const expiredSources = session.pdfSources.filter(source => {
+      const expiresAt = source.artifact.expiresAt;
+      return expiresAt !== null && new Date(expiresAt).getTime() <= Date.now();
+    });
+    const refreshed: {
+      sourceId: string;
+      artifact: ComposerArtifact;
+    }[] = [];
+
+    for (const [index, source] of expiredSources.entries()) {
+      const artifact = await DocumentComposerService.registerPdf({
+        uri: source.uri,
+        fileName: source.fileName,
+        idempotencyKey: `source-refresh-${source.id}-${Date.now()}`,
+        onProgress: progress =>
+          onProgress?.(
+            Math.round(
+              ((index + progress / 100) /
+                Math.max(expiredSources.length, 1)) *
+                100
+            )
+          ),
+      });
+      refreshed.push({ sourceId: source.id, artifact });
+    }
+
+    return refreshed;
+  }
+
+  static async cleanupTemporarySources(sources: ComposerPdfSource[]) {
+    return DocumentComposerService.cleanupTemporaryArtifacts(
+      sources.map(source => source.artifact)
+    );
+  }
+
+  static async cleanupTemporaryArtifacts(artifacts: ComposerArtifact[]) {
+    await Promise.all(
+      artifacts
+        .filter(artifact => artifact.status === 'TEMPORARY')
+        .map(artifact =>
+          api
+            .delete(
+              `/document-composer/artifacts/${encodeURIComponent(
+                artifact.id
+              )}`,
+              {
+                headers: {
+                  noLoader: true,
+                  suppressErrorToast: true,
+                },
+              }
+            )
+            .catch(() => undefined)
+        )
+    );
   }
 
   static async downloadContractPdf(input: {

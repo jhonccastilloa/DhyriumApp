@@ -1,4 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import {
   Alert,
   FlatList,
@@ -7,7 +12,10 @@ import {
   View,
   type ListRenderItem,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import {
+  useNavigation,
+  usePreventRemove,
+} from '@react-navigation/native';
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import type { StaticScreenProps } from '@react-navigation/native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
@@ -20,6 +28,7 @@ import AppText from '@/components/typography/AppText';
 import type { MainAppNavigatorNavigationProp } from '@/app/navigation/MainAppNavigator';
 import { asFileUri } from '@/infrastructure/storage/fileSystemUtils';
 import ContractsService from '@/modules/contracts/services/ContractsService';
+import ComposerSourceSheet from '../components/ComposerSourceSheet';
 import DocumentPageListItem from '../components/DocumentPageListItem';
 import MovePageToPositionSheet from '../components/MovePageToPositionSheet';
 import {
@@ -27,23 +36,35 @@ import {
   DOCUMENT_PAGE_CARD_HEIGHT,
   DOCUMENT_PAGE_ITEM_EXTENT,
 } from '../constants/documentComposerLayout';
+import {
+  getPageArtifactId,
+  hasUnsavedComposerChanges,
+} from '../domain/composerSources';
 import DocumentComposerService from '../services/DocumentComposerService';
-import { pickPdfDocument } from '../services/documentPickerService';
+import {
+  pickPdfDocument,
+  removePickedPdfCopy,
+} from '../services/documentPickerService';
 import { scanDocuments } from '../services/scannerService';
 import { useDocumentComposerStore } from '../state/useDocumentComposerStore';
 import type {
   ComposerArtifact,
   ComposerDestination,
+  ComposerEntrySource,
   ComposerPage,
 } from '../types/documentComposer.types';
 
 type Props = StaticScreenProps<{
   mode: 'tool' | 'contract';
-  source: 'scanner' | 'pdf';
+  source: ComposerEntrySource;
   destination?: ComposerDestination;
   useCurrent?: boolean;
   resumeSessionId?: string;
 }>;
+
+type SourceActionMode = 'append' | 'replace';
+type SourceKind = 'scanner' | 'pdf' | 'current';
+type SourceResult = 'success' | 'cancel' | 'error';
 
 const PageSeparator = () => <View style={styles.pageSeparator} />;
 
@@ -53,10 +74,29 @@ const ComposerReviewScreen = ({ route }: Props) => {
   const started = useRef(false);
   const listRef = useRef<FlatList<ComposerPage>>(null);
   const moveToPositionSheetRef = useRef<BottomSheetModal>(null);
+  const sourceSheetRef = useRef<BottomSheetModal>(null);
+  const pendingExitAction = useRef<
+    Parameters<typeof navigation.dispatch>[0] | null
+  >(null);
   const [movePageId, setMovePageId] = useState<string>();
+  const [sourceActionMode, setSourceActionMode] =
+    useState<SourceActionMode>('append');
+  const [lastSourceAction, setLastSourceAction] = useState<{
+    kind: SourceKind;
+    mode: SourceActionMode;
+  }>();
+  const [exitApproved, setExitApproved] = useState(false);
   const session = useDocumentComposerStore(state => state.session);
   const createSession = useDocumentComposerStore(state => state.createSession);
-  const setSourcePdf = useDocumentComposerStore(state => state.setSourcePdf);
+  const appendPdfSource = useDocumentComposerStore(
+    state => state.appendPdfSource,
+  );
+  const replaceWithPdfSource = useDocumentComposerStore(
+    state => state.replaceWithPdfSource,
+  );
+  const refreshPdfSourceArtifact = useDocumentComposerStore(
+    state => state.refreshPdfSourceArtifact,
+  );
   const addScannedPaths = useDocumentComposerStore(
     state => state.addScannedPaths,
   );
@@ -71,7 +111,10 @@ const ComposerReviewScreen = ({ route }: Props) => {
   const updateProcess = useDocumentComposerStore(state => state.updateProcess);
   const saveDraft = useDocumentComposerStore(state => state.saveDraft);
   const loadDraft = useDocumentComposerStore(state => state.loadDraft);
-  const clearSession = useDocumentComposerStore(state => state.clearSession);
+  const discardSession = useDocumentComposerStore(
+    state => state.discardSession,
+  );
+  const hasUnsavedChanges = hasUnsavedComposerChanges(session);
 
   const openNearbyOrder = useCallback(
     (pageId: string) => {
@@ -84,118 +127,257 @@ const ComposerReviewScreen = ({ route }: Props) => {
     setMovePageId(pageId);
   }, []);
 
-  const choosePdf = useCallback(async () => {
-    const selected = await pickPdfDocument();
-    if (selected.status === 'cancel') return false;
-    updateProcess({ status: 'transferring', uploadProgress: 0 });
-    const artifact = await DocumentComposerService.registerPdf({
-      uri: selected.uri,
-      fileName: selected.fileName,
-      idempotencyKey: `source-${Date.now()}-${selected.fileName}`,
-      onProgress: progress => updateProcess({ uploadProgress: progress }),
-    });
-    setSourcePdf({
-      uri: selected.uri,
-      fileName: selected.fileName,
-      artifact,
-    });
-    updateProcess({ status: 'reviewing', uploadProgress: 0 });
-    return true;
-  }, [setSourcePdf, updateProcess]);
+  const markSourceError = useCallback(
+    (error: unknown) => {
+      updateProcess({
+        status: 'transferError',
+        uploadProgress: 0,
+        errorMessage:
+          error instanceof Error
+            ? error.message
+            : 'No se pudo preparar el contenido.',
+      });
+    },
+    [updateProcess],
+  );
 
-  const loadCurrentPdf = useCallback(async () => {
+  const choosePdf = useCallback(
+    async (mode: SourceActionMode): Promise<SourceResult> => {
+      const selected = await pickPdfDocument();
+      if (selected.status === 'cancel') return 'cancel';
+      let registeredArtifact: ComposerArtifact | undefined;
+
+      try {
+        updateProcess({ status: 'transferring', uploadProgress: 0 });
+        const artifact = await DocumentComposerService.registerPdf({
+          uri: selected.uri,
+          fileName: selected.fileName,
+          idempotencyKey: `source-${Date.now()}-${selected.fileName}`,
+          onProgress: progress => updateProcess({ uploadProgress: progress }),
+        });
+        registeredArtifact = artifact;
+        const input = {
+          uri: selected.uri,
+          fileName: selected.fileName,
+          artifact,
+        };
+        if (mode === 'replace') await replaceWithPdfSource(input);
+        else await appendPdfSource(input);
+        updateProcess({ status: 'reviewing', uploadProgress: 0 });
+        return 'success';
+      } catch (error) {
+        if (registeredArtifact) {
+          await DocumentComposerService.cleanupTemporaryArtifacts([
+            registeredArtifact,
+          ]);
+        }
+        await removePickedPdfCopy(selected.uri);
+        markSourceError(error);
+        return 'error';
+      }
+    },
+    [
+      appendPdfSource,
+      markSourceError,
+      replaceWithPdfSource,
+      updateProcess,
+    ],
+  );
+
+  const loadCurrentPdf = useCallback(async (): Promise<SourceResult> => {
     const destination = route.params.destination;
-    if (!destination) return false;
-    updateProcess({ status: 'processing' });
-    const source = await ContractsService.getEditSource(
-      destination.contractId,
-      destination.levelCode,
-    );
-    const localPath = await DocumentComposerService.downloadContractPdf({
-      contractId: destination.contractId,
-      levelCode: destination.levelCode,
-      name: source.artifact.name,
-    });
-    const now = new Date().toISOString();
-    const artifact: ComposerArtifact = {
-      id: source.artifact.id,
-      name: source.artifact.name,
-      pageCount: source.artifact.pageCount,
-      sizeBytes: source.artifact.sizeBytes,
-      downloadUrl: source.artifact.downloadUrl,
-      status: source.artifact.status || 'TEMPORARY',
-      type: source.artifact.type || 'ORIGINAL_PDF',
-      mimeType: source.artifact.mimeType || 'application/pdf',
-      createdAt: source.artifact.createdAt || now,
-      expiresAt: source.artifact.expiresAt || null,
-    };
-    setSourcePdf({
-      uri: asFileUri(localPath),
-      fileName: source.artifact.name,
-      artifact,
-    });
-    updateProcess({ status: 'reviewing' });
-    return true;
-  }, [route.params.destination, setSourcePdf, updateProcess]);
+    if (!destination) return 'error';
+    try {
+      updateProcess({ status: 'processing' });
+      const source = await ContractsService.getEditSource(
+        destination.contractId,
+        destination.levelCode,
+      );
+      const localPath = await DocumentComposerService.downloadContractPdf({
+        contractId: destination.contractId,
+        levelCode: destination.levelCode,
+        name: source.artifact.name,
+      });
+      const now = new Date().toISOString();
+      const artifact: ComposerArtifact = {
+        id: source.artifact.id,
+        name: source.artifact.name,
+        pageCount: source.artifact.pageCount,
+        sizeBytes: source.artifact.sizeBytes,
+        downloadUrl: source.artifact.downloadUrl,
+        status: source.artifact.status || 'TEMPORARY',
+        type: source.artifact.type || 'ORIGINAL_PDF',
+        mimeType: source.artifact.mimeType || 'application/pdf',
+        createdAt: source.artifact.createdAt || now,
+        expiresAt: source.artifact.expiresAt || null,
+      };
+      await replaceWithPdfSource({
+        uri: asFileUri(localPath),
+        fileName: source.artifact.name,
+        artifact,
+      });
+      updateProcess({ status: 'reviewing' });
+      return 'success';
+    } catch (error) {
+      markSourceError(error);
+      return 'error';
+    }
+  }, [
+    markSourceError,
+    replaceWithPdfSource,
+    route.params.destination,
+    updateProcess,
+  ]);
 
   const startScanner = useCallback(
-    async (append: boolean) => {
-      const result = await scanDocuments();
-      if (result.status === 'cancel') return false;
-      if (append) await addScannedPaths(result.paths);
-      else await replaceWithScannedPaths(result.paths);
-      return true;
+    async (mode: SourceActionMode): Promise<SourceResult> => {
+      try {
+        const result = await scanDocuments();
+        if (result.status === 'cancel') return 'cancel';
+        if (mode === 'replace') {
+          await replaceWithScannedPaths(result.paths);
+        } else {
+          await addScannedPaths(result.paths);
+        }
+        updateProcess({ status: 'reviewing', uploadProgress: 0 });
+        return 'success';
+      } catch (error) {
+        markSourceError(error);
+        return 'error';
+      }
     },
-    [addScannedPaths, replaceWithScannedPaths],
+    [
+      addScannedPaths,
+      markSourceError,
+      replaceWithScannedPaths,
+      updateProcess,
+    ],
+  );
+
+  const runSourceAction = useCallback(
+    async (kind: SourceKind, mode: SourceActionMode) => {
+      setLastSourceAction({ kind, mode });
+      if (kind === 'current') return loadCurrentPdf();
+      return kind === 'scanner' ? startScanner(mode) : choosePdf(mode);
+    },
+    [choosePdf, loadCurrentPdf, startScanner],
   );
 
   useEffect(() => {
     if (started.current) return;
     started.current = true;
+
     const initialize = async () => {
       if (route.params.resumeSessionId) {
         loadDraft(route.params.resumeSessionId);
+        const draft = useDocumentComposerStore.getState().session;
+        if (!draft) return;
+        try {
+          const refreshed =
+            await DocumentComposerService.refreshExpiredPdfSources(
+              draft,
+              progress =>
+                updateProcess({
+                  status: 'transferring',
+                  uploadProgress: progress,
+                }),
+            );
+          refreshed.forEach(({ sourceId, artifact }) =>
+            refreshPdfSourceArtifact(sourceId, artifact),
+          );
+          updateProcess({ status: 'reviewing', uploadProgress: 0 });
+        } catch (error) {
+          markSourceError(error);
+        }
         return;
       }
+
       createSession({
         mode: route.params.mode,
         source: route.params.source,
         destination: route.params.destination,
         isEditingExisting: route.params.useCurrent,
       });
-      try {
-        const completed =
-          route.params.source === 'scanner'
-            ? await startScanner(true)
-            : route.params.useCurrent
-            ? await loadCurrentPdf()
-            : await choosePdf();
-        if (!completed) {
-          clearSession();
-          navigation.goBack();
-        }
-      } catch (error) {
-        updateProcess({
-          status: 'transferError',
-          errorMessage:
-            error instanceof Error
-              ? error.message
-              : 'No se pudo preparar el documento.',
-        });
+      const result = route.params.useCurrent
+        ? await runSourceAction('current', 'replace')
+        : await runSourceAction(route.params.source, 'append');
+      if (result === 'cancel') {
+        await discardSession();
+        navigation.goBack();
       }
     };
-    void initialize();
+
+    initialize().catch(() => undefined);
   }, [
-    choosePdf,
-    clearSession,
     createSession,
+    discardSession,
     loadCurrentPdf,
     loadDraft,
+    markSourceError,
     navigation,
+    refreshPdfSourceArtifact,
     route.params,
-    startScanner,
+    runSourceAction,
     updateProcess,
   ]);
+
+  usePreventRemove(
+    hasUnsavedChanges && !exitApproved,
+    ({ data }) => {
+      const current = useDocumentComposerStore.getState().session;
+      Alert.alert(
+        '¿Guardar antes de salir?',
+        'Hay cambios que todavía no están guardados en un borrador.',
+        [
+          { text: 'Continuar editando', style: 'cancel' },
+          {
+            text: 'Descartar',
+            style: 'destructive',
+            onPress: () => {
+              (async () => {
+                if (current) {
+                  const savedDraft =
+                    useDocumentComposerStore
+                      .getState()
+                      .drafts.find(draft => draft.id === current.id);
+                  const savedArtifactIds = new Set(
+                    savedDraft?.pdfSources.map(
+                      source => source.artifact.id,
+                    ) ?? [],
+                  );
+                  await DocumentComposerService.cleanupTemporarySources(
+                    current.pdfSources.filter(
+                      source =>
+                        !savedArtifactIds.has(source.artifact.id),
+                    ),
+                  );
+                }
+                await discardSession();
+                pendingExitAction.current = data.action;
+                setExitApproved(true);
+              })().catch(() => undefined);
+            },
+          },
+          {
+            text: 'Guardar borrador',
+            onPress: () => {
+              saveDraft();
+              toast.success('Borrador guardado');
+              pendingExitAction.current = data.action;
+              setExitApproved(true);
+            },
+          },
+        ],
+      );
+    },
+  );
+
+  useEffect(() => {
+    if (exitApproved && pendingExitAction.current) {
+      navigation.dispatch(pendingExitAction.current);
+      pendingExitAction.current = null;
+    }
+  }, [exitApproved, navigation]);
 
   const confirmDelete = useCallback(
     (pageId: string) => {
@@ -212,7 +394,9 @@ const ComposerReviewScreen = ({ route }: Props) => {
           {
             text: 'Eliminar',
             style: 'destructive',
-            onPress: () => void deletePage(pageId),
+            onPress: () => {
+              deletePage(pageId).catch(() => undefined);
+            },
           },
         ],
       );
@@ -235,26 +419,31 @@ const ComposerReviewScreen = ({ route }: Props) => {
     setMovePageId(undefined);
   }, []);
 
-  const repeatAll = () => {
+  const openSourceSheet = useCallback((mode: SourceActionMode) => {
+    setSourceActionMode(mode);
+    requestAnimationFrame(() => sourceSheetRef.current?.present());
+  }, []);
+
+  const confirmReplace = useCallback(() => {
     Alert.alert(
-      'Repetir todo el escaneo',
-      'Se descartarán las páginas actuales después de completar el nuevo escaneo.',
+      'Reemplazar todo el contenido',
+      'Las páginas actuales se conservarán hasta que completes el nuevo escaneo o selecciones otro PDF.',
       [
         { text: 'Cancelar', style: 'cancel' },
         {
-          text: 'Repetir todo',
+          text: 'Continuar',
           style: 'destructive',
-          onPress: () => void startScanner(false),
+          onPress: () => openSourceSheet('replace'),
         },
       ],
     );
-  };
+  }, [openSourceSheet]);
 
   const renderPage: ListRenderItem<ComposerPage> = useCallback(
     ({ item }) => (
       <DocumentPageListItem
         page={item}
-        artifactId={session?.sourceArtifact?.id}
+        artifactId={getPageArtifactId(session, item)}
         onView={viewPage}
         onDelete={confirmDelete}
         onMoveToPosition={openMoveToPosition}
@@ -265,7 +454,7 @@ const ComposerReviewScreen = ({ route }: Props) => {
       confirmDelete,
       openMoveToPosition,
       openNearbyOrder,
-      session?.sourceArtifact?.id,
+      session,
       viewPage,
     ],
   );
@@ -284,12 +473,20 @@ const ComposerReviewScreen = ({ route }: Props) => {
     [moveToPosition],
   );
 
+  const saveAndExit = useCallback(() => {
+    saveDraft();
+    toast.success('Borrador guardado');
+    setExitApproved(true);
+    requestAnimationFrame(() => navigation.goBack());
+  }, [navigation, saveDraft]);
+
   if (!session) return <AppFlex flex={1} style={styles.screen} />;
   const busy =
     session.status === 'transferring' || session.status === 'processing';
   const orderPage = movePageId
     ? session.pages.find(page => page.id === movePageId)
     : undefined;
+
   return (
     <AppFlex flex={1} style={styles.screen}>
       <AppHeader
@@ -297,9 +494,9 @@ const ComposerReviewScreen = ({ route }: Props) => {
         eyebrow={
           session.mode === 'contract'
             ? session.destination?.contractLabel
-            : 'Herramientas'
+            : 'Crear y editar PDF'
         }
-        title="Revisar páginas"
+        title="Editar PDF"
         count={session.pages.length}
       />
       <AppFlex p="md" gap="sm" style={styles.summary}>
@@ -313,13 +510,19 @@ const ComposerReviewScreen = ({ route }: Props) => {
         />
         <AppFlex direction="row" justify="space-between" gap="sm">
           <AppText variant="text.xs.regular" color="details">
-            Orden final
+            Contenido actual
           </AppText>
           <AppText variant="text.xs.bold" color="body" numberOfLines={1}>
             {session.pages.length > 0
               ? `${session.pages.length} ${
                   session.pages.length === 1 ? 'página' : 'páginas'
-                } · Orden personalizado`
+                } · ${
+                  session.source === 'mixed'
+                    ? 'PDF y escaneos'
+                    : session.source === 'pdf'
+                    ? 'PDF'
+                    : 'Escaneo'
+                }`
               : 'Sin páginas'}
           </AppText>
         </AppFlex>
@@ -328,18 +531,27 @@ const ComposerReviewScreen = ({ route }: Props) => {
       {session.status === 'transferError' ? (
         <AppFlex p="md" gap="sm" style={styles.error}>
           <AppText variant="text.sm.bold" color="error">
-            {session.errorMessage || 'No se pudo preparar el documento.'}
+            {session.errorMessage || 'No se pudo preparar el contenido.'}
           </AppText>
           <AppButton
-            text="Intentar nuevamente"
+            text={
+              lastSourceAction
+                ? 'Intentar nuevamente'
+                : 'Elegir otra fuente'
+            }
             variant="ghost"
             size="sm"
             align="left"
-            onPress={() =>
-              void (route.params.source === 'scanner'
-                ? startScanner(true)
-                : choosePdf())
-            }
+            onPress={() => {
+              if (lastSourceAction) {
+                runSourceAction(
+                    lastSourceAction.kind,
+                    lastSourceAction.mode,
+                  ).catch(() => undefined);
+              } else {
+                openSourceSheet('append');
+              }
+            }}
           />
         </AppFlex>
       ) : null}
@@ -368,7 +580,8 @@ const ComposerReviewScreen = ({ route }: Props) => {
       <AppFlex p="md" gap="sm" style={styles.actions}>
         <AppFlex direction="row" gap="sm">
           <Pressable
-            onPress={() => void startScanner(true)}
+            disabled={busy}
+            onPress={() => openSourceSheet('append')}
             style={styles.secondaryButton}
           >
             <AppIcon
@@ -380,14 +593,18 @@ const ComposerReviewScreen = ({ route }: Props) => {
               Agregar páginas
             </AppText>
           </Pressable>
-          <Pressable onPress={repeatAll} style={styles.secondaryButton}>
+          <Pressable
+            disabled={busy || session.pages.length === 0}
+            onPress={confirmReplace}
+            style={styles.secondaryButton}
+          >
             <AppIcon
               name="arrowClockwise"
               size={19}
               mColor={theme.colors.icon.secondary}
             />
             <AppText variant="text.sm.bold" color="body">
-              Repetir todo
+              Reemplazar todo
             </AppText>
           </Pressable>
         </AppFlex>
@@ -397,19 +614,17 @@ const ComposerReviewScreen = ({ route }: Props) => {
             variant="ghost"
             align="left"
             style={styles.draftButton}
-            disabled={session.pages.length === 0}
-            onPress={() => {
-              saveDraft();
-              toast.success('Borrador guardado');
-              navigation.goBack();
-            }}
+            disabled={session.pages.length === 0 || busy}
+            onPress={saveAndExit}
           />
           <AppButton
             text={session.mode === 'contract' ? 'Continuar' : 'Generar PDF'}
             leftIcon="none"
             style={styles.generateButton}
             disabled={
-              session.pages.length === 0 || session.name.trim().length === 0
+              busy ||
+              session.pages.length === 0 ||
+              session.name.trim().length === 0
             }
             onPress={() => {
               navigation.navigate('ComposerProcess');
@@ -428,6 +643,21 @@ const ComposerReviewScreen = ({ route }: Props) => {
           onDismiss={handleMoveToPositionDismiss}
         />
       ) : null}
+
+      <ComposerSourceSheet
+        sheetRef={sourceSheetRef}
+        mode={sourceActionMode}
+        onScan={() => {
+          runSourceAction('scanner', sourceActionMode).catch(
+            () => undefined,
+          );
+        }}
+        onChoosePdf={() => {
+          runSourceAction('pdf', sourceActionMode).catch(
+            () => undefined,
+          );
+        }}
+      />
     </AppFlex>
   );
 };
