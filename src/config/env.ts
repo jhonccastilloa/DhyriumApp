@@ -20,6 +20,5 @@ export const env = {
     'MMKV_ENCRYPTION_KEY',
   ),
   APP_ENV: normalizeAppEnvironment(required(Config.APP_ENV, 'APP_ENV')),
-  API_BASE_URL:
-    Config.API_BASE_URL?.trim() || 'https://dhyrium.online/back/api/v1',
+  API_BASE_URL:'https://dhyrium.online/back/api/v1',
 } as const;
