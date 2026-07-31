@@ -1,7 +1,4 @@
-import {
-  calculateNearbyGridLayout,
-  resolveNearbyGridDragTarget,
-} from '@/modules/document-composer/utils/nearbyGridLayout';
+import { calculateNearbyGridLayout } from '@/modules/document-composer/utils/nearbyGridLayout';
 
 describe('nearby grid layout', () => {
   it('always calculates three columns within the available area', () => {
@@ -40,43 +37,4 @@ describe('nearby grid layout', () => {
     ).toBe(false);
   });
 
-  it.each([
-    { name: 'grid', x: 10, y: 10, expected: 'grid' },
-    {
-      name: 'move action',
-      x: 10,
-      y: 100,
-      expected: 'moveToPosition',
-    },
-    { name: 'gap', x: 10, y: 74, expected: 'outside' },
-    { name: 'side', x: 400, y: 10, expected: 'outside' },
-  ])('resolves a drag over the $name', ({ x, y, expected }) => {
-    expect(
-      resolveNearbyGridDragTarget({
-        x,
-        y,
-        itemWidth: 100,
-        itemHeight: 100,
-        gridWidth: 316,
-        gridHeight: 120,
-        dropTargetGap: 8,
-        dropTargetHeight: 56,
-      })
-    ).toBe(expected);
-  });
-
-  it('safely rejects invalid drag geometry', () => {
-    expect(
-      resolveNearbyGridDragTarget({
-        x: Number.NaN,
-        y: 0,
-        itemWidth: 100,
-        itemHeight: 100,
-        gridWidth: 316,
-        gridHeight: 120,
-        dropTargetGap: 8,
-        dropTargetHeight: 56,
-      })
-    ).toBe('outside');
-  });
 });

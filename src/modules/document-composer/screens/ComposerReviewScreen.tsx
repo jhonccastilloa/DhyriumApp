@@ -1,9 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
   FlatList,
@@ -25,8 +20,9 @@ import AppText from '@/components/typography/AppText';
 import type { MainAppNavigatorNavigationProp } from '@/app/navigation/MainAppNavigator';
 import { asFileUri } from '@/infrastructure/storage/fileSystemUtils';
 import ContractsService from '@/modules/contracts/services/ContractsService';
-import ComposerPageOrderSheet from '../components/ComposerPageOrderSheet';
 import DocumentPageListItem from '../components/DocumentPageListItem';
+import MovePageToPositionSheet from '../components/MovePageToPositionSheet';
+import NearbyPageReorderSheet from '../components/NearbyPageReorderSheet';
 import {
   DOCUMENT_PAGE_CARD_GAP,
   DOCUMENT_PAGE_CARD_HEIGHT,
@@ -52,8 +48,8 @@ type Props = StaticScreenProps<{
 }>;
 
 type PageOrderRequest = {
+  type: 'nearby' | 'move';
   pageId: string;
-  initialStage: 'nearby' | 'move';
 };
 
 const PageSeparator = () => <View style={styles.pageSeparator} />;
@@ -63,23 +59,23 @@ const ComposerReviewScreen = ({ route }: Props) => {
   const { theme } = useUnistyles();
   const started = useRef(false);
   const listRef = useRef<FlatList<ComposerPage>>(null);
-  const orderSheetRef = useRef<BottomSheetModal>(null);
-  const [pageOrderRequest, setPageOrderRequest] =
-    useState<PageOrderRequest>();
+  const nearbyOrderSheetRef = useRef<BottomSheetModal>(null);
+  const moveToPositionSheetRef = useRef<BottomSheetModal>(null);
+  const [pageOrderRequest, setPageOrderRequest] = useState<PageOrderRequest>();
   const session = useDocumentComposerStore(state => state.session);
   const createSession = useDocumentComposerStore(state => state.createSession);
   const setSourcePdf = useDocumentComposerStore(state => state.setSourcePdf);
   const addScannedPaths = useDocumentComposerStore(
-    state => state.addScannedPaths
+    state => state.addScannedPaths,
   );
   const replaceWithScannedPaths = useDocumentComposerStore(
-    state => state.replaceWithScannedPaths
+    state => state.replaceWithScannedPaths,
   );
   const applyNearbyPageOrder = useDocumentComposerStore(
-    state => state.applyNearbyPageOrder
+    state => state.applyNearbyPageOrder,
   );
   const moveToPosition = useDocumentComposerStore(
-    state => state.moveToPosition
+    state => state.moveToPosition,
   );
   const deletePage = useDocumentComposerStore(state => state.deletePage);
   const setName = useDocumentComposerStore(state => state.setName);
@@ -98,11 +94,11 @@ const ComposerReviewScreen = ({ route }: Props) => {
   }, [dismissNearbyOrderUndo]);
 
   const openNearbyOrder = useCallback((pageId: string) => {
-    setPageOrderRequest({ pageId, initialStage: 'nearby' });
+    setPageOrderRequest({ pageId, type: 'nearby' });
   }, []);
 
   const openMoveToPosition = useCallback((pageId: string) => {
-    setPageOrderRequest({ pageId, initialStage: 'move' });
+    setPageOrderRequest({ pageId, type: 'move' });
   }, []);
 
   const choosePdf = useCallback(async () => {
@@ -130,7 +126,7 @@ const ComposerReviewScreen = ({ route }: Props) => {
     updateProcess({ status: 'processing' });
     const source = await ContractsService.getEditSource(
       destination.contractId,
-      destination.levelCode
+      destination.levelCode,
     );
     const localPath = await DocumentComposerService.downloadContractPdf({
       contractId: destination.contractId,
@@ -167,7 +163,7 @@ const ComposerReviewScreen = ({ route }: Props) => {
       else await replaceWithScannedPaths(result.paths);
       return true;
     },
-    [addScannedPaths, replaceWithScannedPaths]
+    [addScannedPaths, replaceWithScannedPaths],
   );
 
   useEffect(() => {
@@ -218,35 +214,57 @@ const ComposerReviewScreen = ({ route }: Props) => {
     updateProcess,
   ]);
 
-  const confirmDelete = useCallback((pageId: string) => {
-    const page = useDocumentComposerStore
-      .getState()
-      .session?.pages.find(item => item.id === pageId);
-    Alert.alert(
-      'Eliminar página',
-      `¿Quieres eliminar la página ${page?.order || ''}? El resto se renumerará.`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Eliminar',
-          style: 'destructive',
-          onPress: () => void deletePage(pageId),
-        },
-      ]
-    );
-  }, [deletePage]);
+  const confirmDelete = useCallback(
+    (pageId: string) => {
+      const page = useDocumentComposerStore
+        .getState()
+        .session?.pages.find(item => item.id === pageId);
+      Alert.alert(
+        'Eliminar página',
+        `¿Quieres eliminar la página ${
+          page?.order || ''
+        }? El resto se renumerará.`,
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          {
+            text: 'Eliminar',
+            style: 'destructive',
+            onPress: () => void deletePage(pageId),
+          },
+        ],
+      );
+    },
+    [deletePage],
+  );
 
   const viewPage = useCallback(
     (pageId: string) => {
       dismissNearbyOrderUndo();
       navigation.navigate('PagePreview', { pageId });
     },
-    [dismissNearbyOrderUndo, navigation]
+    [dismissNearbyOrderUndo, navigation],
   );
 
   useEffect(() => {
-    if (pageOrderRequest) orderSheetRef.current?.present();
+    if (!pageOrderRequest) return;
+    const sheetRef =
+      pageOrderRequest.type === 'nearby'
+        ? nearbyOrderSheetRef
+        : moveToPositionSheetRef;
+    sheetRef.current?.present();
   }, [pageOrderRequest]);
+
+  const handleNearbyOrderDismiss = useCallback(() => {
+    setPageOrderRequest(current =>
+      current?.type === 'nearby' ? undefined : current
+    );
+  }, []);
+
+  const handleMoveToPositionDismiss = useCallback(() => {
+    setPageOrderRequest(current =>
+      current?.type === 'move' ? undefined : current
+    );
+  }, []);
 
   const repeatAll = () => {
     Alert.alert(
@@ -259,7 +277,7 @@ const ComposerReviewScreen = ({ route }: Props) => {
           style: 'destructive',
           onPress: () => void startScanner(false),
         },
-      ]
+      ],
     );
   };
 
@@ -280,7 +298,7 @@ const ComposerReviewScreen = ({ route }: Props) => {
       openNearbyOrder,
       session?.sourceArtifact?.id,
       viewPage,
-    ]
+    ],
   );
 
   const handleMoveToPosition = useCallback(
@@ -294,7 +312,7 @@ const ComposerReviewScreen = ({ route }: Props) => {
         });
       });
     },
-    [moveToPosition]
+    [moveToPosition],
   );
 
   if (!session) return <AppFlex flex={1} style={styles.screen} />;
@@ -393,10 +411,7 @@ const ComposerReviewScreen = ({ route }: Props) => {
               Agregar páginas
             </AppText>
           </Pressable>
-          <Pressable
-            onPress={repeatAll}
-            style={styles.secondaryButton}
-          >
+          <Pressable onPress={repeatAll} style={styles.secondaryButton}>
             <AppIcon
               name="arrowClockwise"
               size={19}
@@ -436,18 +451,26 @@ const ComposerReviewScreen = ({ route }: Props) => {
         </AppFlex>
       </AppFlex>
 
-      {orderPage && pageOrderRequest ? (
-        <ComposerPageOrderSheet
-          key={`${orderPage.id}-${pageOrderRequest.initialStage}`}
-          ref={orderSheetRef}
-          page={orderPage}
-          pages={session.pages}
-          initialStage={pageOrderRequest.initialStage}
-          artifactId={session.sourceArtifact?.id}
-          onApplyNearbyOrder={applyNearbyPageOrder}
-          onMoveToPosition={handleMoveToPosition}
-          onDismiss={() => setPageOrderRequest(undefined)}
-        />
+      {session.pages[0] ? (
+        <>
+          <NearbyPageReorderSheet
+            ref={nearbyOrderSheetRef}
+            page={orderPage ?? session.pages[0]}
+            pages={session.pages}
+            artifactId={session.sourceArtifact?.id}
+            isActive={pageOrderRequest?.type === 'nearby'}
+            onApplyOrder={applyNearbyPageOrder}
+            onDismiss={handleNearbyOrderDismiss}
+          />
+          <MovePageToPositionSheet
+            ref={moveToPositionSheetRef}
+            page={orderPage ?? session.pages[0]}
+            pages={session.pages}
+            isActive={pageOrderRequest?.type === 'move'}
+            onMove={handleMoveToPosition}
+            onDismiss={handleMoveToPositionDismiss}
+          />
+        </>
       ) : null}
     </AppFlex>
   );

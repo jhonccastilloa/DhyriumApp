@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   act,
-  fireEvent,
   render,
 } from '@testing-library/react-native';
 import NearbyPageReorderGrid from '@/modules/document-composer/components/NearbyPageReorderGrid';
@@ -18,19 +17,12 @@ type MockGridProps = {
 type MockGridItemProps = {
   id: string;
   activationDelay?: number;
-  onDragStart?: (id: string, index: number) => void;
   onDrop?: (
     id: string,
     index: number,
     positions?: Record<string, { index: number }>
   ) => void;
   onMove?: () => void;
-  onDragging?: (
-    id: string,
-    overItemId: string | null,
-    x: number,
-    y: number
-  ) => void;
 };
 
 let mockGridProps: MockGridProps | undefined;
@@ -187,8 +179,7 @@ const sourceIds = source.map(item => item.id);
 
 const renderGrid = async (
   pages = source,
-  onApplyOrder = jest.fn(),
-  onMoveToPosition = jest.fn()
+  onApplyOrder = jest.fn()
 ) => {
   const screen = await render(
     <NearbyPageReorderGrid
@@ -196,10 +187,9 @@ const renderGrid = async (
       rangePageIds={sourceIds}
       selectedPageId="b"
       onApplyOrder={onApplyOrder}
-      onMoveToPosition={onMoveToPosition}
     />
   );
-  return { screen, onApplyOrder, onMoveToPosition };
+  return { screen, onApplyOrder };
 };
 
 describe('NearbyPageReorderGrid', () => {
@@ -220,32 +210,12 @@ describe('NearbyPageReorderGrid', () => {
     expect(screen.getByText('Seleccionada')).toBeTruthy();
   });
 
-  it('shows active feedback only during a drag', async () => {
-    const { screen } = await renderGrid();
-
-    await act(() => {
-      mockGridItems.get('b')?.onDragStart?.('b', 1);
-    });
-    expect(screen.getByTestId('active-page-b')).toBeTruthy();
-
-    await act(() => {
-      mockGridItems.get('b')?.onDrop?.('b', 1, {
-        a: { index: 0 },
-        b: { index: 1 },
-        c: { index: 2 },
-      });
-    });
-    expect(screen.queryByTestId('active-page-b')).toBeNull();
-  });
-
   it('applies one complete update only at the end of a changed drop', async () => {
     const { onApplyOrder } = await renderGrid();
     const item = mockGridItems.get('b');
 
     expect(item?.onMove).toBeUndefined();
     await act(() => {
-      item?.onDragStart?.('b', 1);
-      item?.onDragging?.('b', null, 0, 0);
       item?.onDrop?.('b', 0, {
         a: { index: 2 },
         b: { index: 0 },
@@ -258,72 +228,6 @@ describe('NearbyPageReorderGrid', () => {
       sourceIds,
       ['b', 'c', 'a']
     );
-  });
-
-  it('opens the numeric move for whichever page is dropped on the action', async () => {
-    const onApplyOrder = jest.fn();
-    const onMoveToPosition = jest.fn();
-    const { screen } = await renderGrid(
-      source,
-      onApplyOrder,
-      onMoveToPosition
-    );
-    const item = mockGridItems.get('c');
-
-    await act(() => {
-      item?.onDragStart?.('c', 2);
-      item?.onDragging?.('c', null, 0, 100);
-    });
-    expect(
-      screen.getByText('Suelta aquí para mover la página 3')
-    ).toBeTruthy();
-
-    await act(() => {
-      item?.onDrop?.('c', 0, {
-        a: { index: 1 },
-        b: { index: 2 },
-        c: { index: 0 },
-      });
-    });
-
-    expect(onMoveToPosition).toHaveBeenCalledTimes(1);
-    expect(onMoveToPosition).toHaveBeenCalledWith('c');
-    expect(onApplyOrder).not.toHaveBeenCalled();
-  });
-
-  it('cancels a drop outside the grid and the move action', async () => {
-    const onApplyOrder = jest.fn();
-    const onMoveToPosition = jest.fn();
-    await renderGrid(source, onApplyOrder, onMoveToPosition);
-    const item = mockGridItems.get('c');
-
-    await act(() => {
-      item?.onDragStart?.('c', 2);
-      item?.onDragging?.('c', null, 1000, 1000);
-      item?.onDrop?.('c', 0, {
-        a: { index: 1 },
-        b: { index: 2 },
-        c: { index: 0 },
-      });
-    });
-
-    expect(onApplyOrder).not.toHaveBeenCalled();
-    expect(onMoveToPosition).not.toHaveBeenCalled();
-  });
-
-  it('keeps the move action available by tap for the opening page', async () => {
-    const onMoveToPosition = jest.fn();
-    const { screen } = await renderGrid(
-      source,
-      jest.fn(),
-      onMoveToPosition
-    );
-
-    await fireEvent.press(
-      screen.getByTestId('move-to-position-drop-target')
-    );
-
-    expect(onMoveToPosition).toHaveBeenCalledWith('b');
   });
 
   it.each([
@@ -378,8 +282,6 @@ describe('NearbyPageReorderGrid', () => {
     const first = await renderGrid(source, onApplyOrder);
 
     await act(() => {
-      mockGridItems.get('b')?.onDragStart?.('b', 1);
-      mockGridItems.get('b')?.onDragging?.('b', null, 0, 0);
       mockGridItems.get('b')?.onDrop?.('b', 0, {
         a: { index: 2 },
         b: { index: 0 },
@@ -393,13 +295,10 @@ describe('NearbyPageReorderGrid', () => {
         rangePageIds={sourceIds}
         selectedPageId="b"
         onApplyOrder={onApplyOrder}
-        onMoveToPosition={jest.fn()}
       />
     );
 
     await act(() => {
-      mockGridItems.get('c')?.onDragStart?.('c', 1);
-      mockGridItems.get('c')?.onDragging?.('c', null, 0, 0);
       mockGridItems.get('c')?.onDrop?.('c', 0, {
         a: { index: 2 },
         b: { index: 1 },

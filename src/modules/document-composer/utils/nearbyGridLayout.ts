@@ -2,65 +2,6 @@ const NEARBY_GRID_COLUMNS = 3;
 const NEARBY_GRID_ROWS = 3;
 const PAGE_HEIGHT_TO_WIDTH_RATIO = Math.SQRT2;
 
-export type NearbyGridDragTarget = 'grid' | 'moveToPosition' | 'outside';
-
-type ResolveNearbyGridDragTargetInput = {
-  x: number;
-  y: number;
-  itemWidth: number;
-  itemHeight: number;
-  gridWidth: number;
-  gridHeight: number;
-  dropTargetGap: number;
-  dropTargetHeight: number;
-};
-
-export const resolveNearbyGridDragTarget = ({
-  x,
-  y,
-  itemWidth,
-  itemHeight,
-  gridWidth,
-  gridHeight,
-  dropTargetGap,
-  dropTargetHeight,
-}: ResolveNearbyGridDragTargetInput): NearbyGridDragTarget => {
-  const values = [
-    x,
-    y,
-    itemWidth,
-    itemHeight,
-    gridWidth,
-    gridHeight,
-    dropTargetGap,
-    dropTargetHeight,
-  ];
-  if (
-    values.some(value => !Number.isFinite(value)) ||
-    itemWidth <= 0 ||
-    itemHeight <= 0 ||
-    gridWidth <= 0 ||
-    gridHeight <= 0 ||
-    dropTargetGap < 0 ||
-    dropTargetHeight <= 0
-  ) {
-    return 'outside';
-  }
-
-  const centerX = x + itemWidth / 2;
-  const centerY = y + itemHeight / 2;
-  if (centerX < 0 || centerX > gridWidth) return 'outside';
-
-  const dropTargetTop = gridHeight + dropTargetGap;
-  if (
-    centerY >= dropTargetTop &&
-    centerY <= dropTargetTop + dropTargetHeight
-  ) {
-    return 'moveToPosition';
-  }
-  return centerY >= 0 && centerY <= gridHeight ? 'grid' : 'outside';
-};
-
 export const calculateNearbyGridLayout = (
   availableWidth: number,
   availableHeight: number,
