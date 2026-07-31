@@ -62,10 +62,11 @@ describe('document composer nearby page order store action', () => {
     const listener = jest.fn();
     const unsubscribe = useDocumentComposerStore.subscribe(listener);
 
-    useDocumentComposerStore
+    const applied = useDocumentComposerStore
       .getState()
       .applyNearbyPageOrder(['b', 'c', 'd'], ['d', 'b', 'c']);
 
+    expect(applied).toBe(true);
     const after = useDocumentComposerStore.getState().session!.pages;
     expect(listener).toHaveBeenCalledTimes(1);
     expect(after.map(item => `${item.id}:${item.order}`)).toEqual([
@@ -106,10 +107,11 @@ describe('document composer nearby page order store action', () => {
     const listener = jest.fn();
     const unsubscribe = useDocumentComposerStore.subscribe(listener);
 
-    useDocumentComposerStore
+    const applied = useDocumentComposerStore
       .getState()
       .applyNearbyPageOrder(range, order);
 
+    expect(applied).toBe(false);
     expect(listener).not.toHaveBeenCalled();
     expect(useDocumentComposerStore.getState().session).toBe(before);
     unsubscribe();

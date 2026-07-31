@@ -21,8 +21,8 @@ describe('ComposerReview reorder structure', () => {
     'src/modules/document-composer/components/DocumentPageListItem.tsx';
   const cardPath =
     'src/modules/document-composer/components/AppDocumentPageCard.tsx';
-  const nearbySheetPath =
-    'src/modules/document-composer/components/NearbyPageReorderSheet.tsx';
+  const nearbyScreenPath =
+    'src/modules/document-composer/screens/NearbyPageReorderScreen.tsx';
   const moveSheetPath =
     'src/modules/document-composer/components/MovePageToPositionSheet.tsx';
   const gridPath =
@@ -32,7 +32,7 @@ describe('ComposerReview reorder structure', () => {
   const reviewScreen = readSource(reviewPath);
   const listItem = readSource(listItemPath);
   const card = readSource(cardPath);
-  const nearbySheet = readSource(nearbySheetPath);
+  const nearbyScreen = readSource(nearbyScreenPath);
   const moveSheet = readSource(moveSheetPath);
   const grid = readSource(gridPath);
   const thumbnail = readSource(thumbnailPath);
@@ -71,9 +71,12 @@ describe('ComposerReview reorder structure', () => {
     expect(card).not.toContain('name="dotsSixVertical"');
     expect(listItem).not.toContain('onLongPress');
     expect(listItem).not.toContain('Gesture');
-    expect(nearbySheet).toContain('NearbyPageReorderGrid');
+    expect(nearbyScreen).toContain('NearbyPageReorderGrid');
+    expect(reviewScreen).toContain(
+      "navigation.navigate('NearbyPageReorder', { pageId })"
+    );
     expect(moveSheet).toContain('AppTextInput');
-    expect(nearbySheet).not.toContain('MovePageToPositionSheet');
+    expect(nearbyScreen).not.toContain('MovePageToPositionSheet');
     expect(moveSheet).not.toContain('NearbyPageReorderGrid');
   });
 
@@ -83,12 +86,7 @@ describe('ComposerReview reorder structure', () => {
       'onPress={() => onMoveToPosition(page.id)}'
     );
     expect(card).not.toContain('name="eye"');
-    expect(reviewScreen).toContain(
-      "setPageOrderRequest({ pageId, type: 'move' })"
-    );
-    expect(reviewScreen).toContain(
-      'ref={nearbyOrderSheetRef}'
-    );
+    expect(reviewScreen).toContain('setMovePageId(pageId)');
     expect(reviewScreen).toContain(
       'ref={moveToPositionSheetRef}'
     );
@@ -121,14 +119,27 @@ describe('ComposerReview reorder structure', () => {
         reviewScreen,
         listItem,
         card,
-        nearbySheet,
+        nearbyScreen,
         moveSheet,
         grid,
       ].join('\n')
     ).not.toContain('PdfView');
     expect(grid).not.toContain('Guardar orden');
-    expect(nearbySheet).not.toContain('Guardar orden');
+    expect(nearbyScreen).not.toContain('Guardar orden');
     expect(moveSheet).not.toContain('Guardar orden');
+  });
+
+  it('keeps nearby changes local until the explicit confirmation', () => {
+    expect(grid).toContain('onOrderChange(orderedPageIds)');
+    expect(grid).not.toContain('useDocumentComposerStore');
+    expect(grid).not.toContain('toast.');
+    expect(nearbyScreen).toContain(
+      'const [orderedPageIds, setOrderedPageIds]'
+    );
+    expect(nearbyScreen).toContain('applyNearbyPageOrder(');
+    expect(nearbyScreen).toContain('text="Cancelar"');
+    expect(nearbyScreen).toContain('text="Confirmar"');
+    expect(nearbyScreen).toContain('usePreventRemove(');
   });
 
   it('preserves the document aspect ratio in thumbnails', () => {

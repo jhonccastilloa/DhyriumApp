@@ -27,8 +27,6 @@ type MockGridItemProps = {
 
 let mockGridProps: MockGridProps | undefined;
 const mockGridItems = new Map<string, MockGridItemProps>();
-const mockToastSuccess = jest.fn();
-const mockToastDismiss = jest.fn();
 
 jest.mock('react-native-reanimated-dnd', () => {
   const { View } = jest.requireActual('react-native');
@@ -66,13 +64,6 @@ jest.mock('react-native-reanimated-dnd', () => {
   };
 });
 
-jest.mock('sonner-native', () => ({
-  toast: {
-    success: (...args: unknown[]) => mockToastSuccess(...args),
-    dismiss: (...args: unknown[]) => mockToastDismiss(...args),
-  },
-}));
-
 jest.mock('react-native-unistyles', () => ({
   StyleSheet: {
     create: () =>
@@ -95,31 +86,6 @@ jest.mock('@/components/typography/AppText', () => {
   return ({ children }: { children: React.ReactNode }) => (
     <Text>{children}</Text>
   );
-});
-
-jest.mock('@/components/buttons/AppButton', () => {
-  const { Pressable, Text } = jest.requireActual('react-native');
-  return {
-    AppButton: ({
-      text,
-      onPress,
-      testID,
-      accessibilityLabel,
-    }: {
-      text: string;
-      onPress: () => void;
-      testID?: string;
-      accessibilityLabel?: string;
-    }) => (
-      <Pressable
-        testID={testID}
-        accessibilityLabel={accessibilityLabel}
-        onPress={onPress}
-      >
-        <Text>{text}</Text>
-      </Pressable>
-    ),
-  };
 });
 
 jest.mock(
@@ -175,21 +141,20 @@ const page = (id: string, order: number): ComposerPage => ({
 });
 
 const source = [page('a', 1), page('b', 2), page('c', 3)];
-const sourceIds = source.map(item => item.id);
 
 const renderGrid = async (
   pages = source,
-  onApplyOrder = jest.fn()
+  onOrderChange = jest.fn()
 ) => {
   const screen = await render(
     <NearbyPageReorderGrid
       pages={pages}
-      rangePageIds={sourceIds}
+      rangeStart={1}
       selectedPageId="b"
-      onApplyOrder={onApplyOrder}
+      onOrderChange={onOrderChange}
     />
   );
-  return { screen, onApplyOrder };
+  return { screen, onOrderChange };
 };
 
 describe('NearbyPageReorderGrid', () => {
@@ -210,8 +175,8 @@ describe('NearbyPageReorderGrid', () => {
     expect(screen.getByText('Seleccionada')).toBeTruthy();
   });
 
-  it('applies one complete update only at the end of a changed drop', async () => {
-    const { onApplyOrder } = await renderGrid();
+  it('emits one complete local order only at the end of a changed drop', async () => {
+    const { onOrderChange } = await renderGrid();
     const item = mockGridItems.get('b');
 
     expect(item?.onMove).toBeUndefined();
@@ -223,11 +188,8 @@ describe('NearbyPageReorderGrid', () => {
       });
     });
 
-    expect(onApplyOrder).toHaveBeenCalledTimes(1);
-    expect(onApplyOrder).toHaveBeenCalledWith(
-      sourceIds,
-      ['b', 'c', 'a']
-    );
+    expect(onOrderChange).toHaveBeenCalledTimes(1);
+    expect(onOrderChange).toHaveBeenCalledWith(['b', 'c', 'a']);
   });
 
   it.each([
@@ -263,7 +225,7 @@ describe('NearbyPageReorderGrid', () => {
       },
     },
   ])('ignores an $name result', async ({ positions }) => {
-    const { onApplyOrder } = await renderGrid();
+    const { onOrderChange } = await renderGrid();
 
     await act(() => {
       mockGridItems.get('b')?.onDrop?.(
@@ -273,28 +235,34 @@ describe('NearbyPageReorderGrid', () => {
       );
     });
 
-    expect(onApplyOrder).not.toHaveBeenCalled();
-    expect(mockToastSuccess).not.toHaveBeenCalled();
+    expect(onOrderChange).not.toHaveBeenCalled();
   });
 
-  it('undoes only the latest applied drop with one store call', async () => {
-    const onApplyOrder = jest.fn();
-    const first = await renderGrid(source, onApplyOrder);
+  it('shows the proposed absolute positions after a local reorder', async () => {
+    const screen = await render(
+      <NearbyPageReorderGrid
+        pages={[source[1], source[2], source[0]]}
+        rangeStart={10}
+        selectedPageId="b"
+        onOrderChange={jest.fn()}
+      />
+    );
 
-    await act(() => {
-      mockGridItems.get('b')?.onDrop?.('b', 0, {
-        a: { index: 2 },
-        b: { index: 0 },
-        c: { index: 1 },
-      });
-    });
+    expect(screen.getByText('10')).toBeTruthy();
+    expect(screen.getByText('11')).toBeTruthy();
+    expect(screen.getByText('12')).toBeTruthy();
+  });
+
+  it('accepts a parent-provided local order without applying global state', async () => {
+    const onOrderChange = jest.fn();
+    const first = await renderGrid(source, onOrderChange);
     const reordered = [source[1], source[2], source[0]];
     await first.screen.rerender(
       <NearbyPageReorderGrid
         pages={reordered}
-        rangePageIds={sourceIds}
+        rangeStart={1}
         selectedPageId="b"
-        onApplyOrder={onApplyOrder}
+        onOrderChange={onOrderChange}
       />
     );
 
@@ -306,31 +274,15 @@ describe('NearbyPageReorderGrid', () => {
       });
     });
 
-    expect(onApplyOrder).toHaveBeenCalledTimes(2);
-    expect(mockToastSuccess).toHaveBeenCalledTimes(2);
-    expect(mockToastSuccess.mock.calls[0][1].id).toBe(
-      mockToastSuccess.mock.calls[1][1].id
-    );
-    const latestUndo =
-      mockToastSuccess.mock.calls[1][1].action.onClick;
-
-    onApplyOrder.mockClear();
-    await act(() => latestUndo());
-
-    expect(onApplyOrder).toHaveBeenCalledTimes(1);
-    expect(onApplyOrder).toHaveBeenCalledWith(sourceIds, [
-      'b',
-      'c',
-      'a',
-    ]);
+    expect(onOrderChange).toHaveBeenCalledTimes(1);
+    expect(onOrderChange).toHaveBeenCalledWith(['c', 'b', 'a']);
   });
 
-  it('unmounts without applying or reverting another order', async () => {
-    const { screen, onApplyOrder } = await renderGrid();
+  it('unmounts without emitting another order', async () => {
+    const { screen, onOrderChange } = await renderGrid();
 
     await screen.unmount();
 
-    expect(onApplyOrder).not.toHaveBeenCalled();
-    expect(mockToastDismiss).not.toHaveBeenCalled();
+    expect(onOrderChange).not.toHaveBeenCalled();
   });
 });

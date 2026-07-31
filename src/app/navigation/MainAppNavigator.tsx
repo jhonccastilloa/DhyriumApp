@@ -11,6 +11,7 @@ import ComposerResultScreen from '@/modules/document-composer/screens/ComposerRe
 import PagePreviewScreen from '@/modules/document-composer/screens/PagePreviewScreen';
 import GeneratedPdfViewerScreen from '@/modules/document-composer/screens/GeneratedPdfViewerScreen';
 import ComposerDraftsScreen from '@/modules/document-composer/screens/ComposerDraftsScreen';
+import NearbyPageReorderScreen from '@/modules/document-composer/screens/NearbyPageReorderScreen';
 import ContractPdfViewerScreen from '@/modules/contracts/screens/ContractPdfViewerScreen';
 
 const MainAppNavigator = createNativeStackNavigator({
@@ -32,6 +33,10 @@ const MainAppNavigator = createNativeStackNavigator({
     PagePreview: PagePreviewScreen,
     GeneratedPdfViewer: GeneratedPdfViewerScreen,
     ComposerDrafts: ComposerDraftsScreen,
+    NearbyPageReorder: createNativeStackScreen({
+      screen: NearbyPageReorderScreen,
+      options: { gestureEnabled: false },
+    }),
     ContractPdfViewer: ContractPdfViewerScreen,
   },
 });

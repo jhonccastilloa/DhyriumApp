@@ -8,9 +8,7 @@ import {
   type SortableGridRenderItemProps,
 } from 'react-native-reanimated-dnd';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
-import { toast } from 'sonner-native';
 import AppText from '@/components/typography/AppText';
-import { NEARBY_PAGE_ORDER_TOAST_ID } from '../constants/documentComposerFeedback';
 import { resolvePageOrderFromPositions } from '../domain/pageOrder';
 import { usePageThumbnail } from '../hooks/usePageThumbnail';
 import type { ComposerPage } from '../types/documentComposer.types';
@@ -27,6 +25,7 @@ type GridAreaSize = {
 
 type CompactPageProps = SortableGridRenderItemProps<ComposerPage> & {
   artifactId?: string;
+  proposedPosition: number;
   selectedPageId: string;
   onDrop: (
     pageId: string,
@@ -37,15 +36,16 @@ type CompactPageProps = SortableGridRenderItemProps<ComposerPage> & {
 
 type NearbyPageReorderGridProps = {
   pages: ComposerPage[];
-  rangePageIds: string[];
+  rangeStart: number;
   selectedPageId: string;
   artifactId?: string;
-  onApplyOrder: (rangePageIds: string[], orderedPageIds: string[]) => void;
+  onOrderChange: (orderedPageIds: string[]) => void;
 };
 
 const CompactSortablePage = ({
   item,
   artifactId,
+  proposedPosition,
   selectedPageId,
   onDrop,
   ...gridItemProps
@@ -74,7 +74,7 @@ const CompactSortablePage = ({
         />
         <View style={styles.compactNumber}>
           <AppText variant="text.xs.bold" color="button">
-            {item.order}
+            {proposedPosition}
           </AppText>
         </View>
         {selected ? (
@@ -91,10 +91,10 @@ const CompactSortablePage = ({
 
 const NearbyPageReorderGrid = ({
   pages,
-  rangePageIds,
+  rangeStart,
   selectedPageId,
   artifactId,
-  onApplyOrder,
+  onOrderChange,
 }: NearbyPageReorderGridProps) => {
   const { theme } = useUnistyles();
   const [gridRevision, setGridRevision] = useState(0);
@@ -137,25 +137,9 @@ const NearbyPageReorderGrid = ({
         return;
       }
 
-      const previousPageIds = [...pageIds];
-      onApplyOrder(rangePageIds, orderedPageIds);
-      toast.success('Orden actualizado', {
-        id: NEARBY_PAGE_ORDER_TOAST_ID,
-        duration: 6000,
-        action: {
-          label: 'Deshacer',
-          onClick: () => {
-            onApplyOrder(rangePageIds, previousPageIds);
-            toast.dismiss(NEARBY_PAGE_ORDER_TOAST_ID);
-          },
-        },
-      });
+      onOrderChange(orderedPageIds);
     },
-    [
-      onApplyOrder,
-      pageIds,
-      rangePageIds,
-    ],
+    [onOrderChange, pageIds],
   );
 
   const renderCompactPage = useCallback(
@@ -164,6 +148,7 @@ const NearbyPageReorderGrid = ({
         key={props.id}
         {...props}
         artifactId={artifactId}
+        proposedPosition={rangeStart + props.index}
         selectedPageId={selectedPageId}
         onDrop={handleDrop}
       />
@@ -171,6 +156,7 @@ const NearbyPageReorderGrid = ({
     [
       artifactId,
       handleDrop,
+      rangeStart,
       selectedPageId,
     ],
   );

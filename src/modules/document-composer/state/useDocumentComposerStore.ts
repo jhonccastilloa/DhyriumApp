@@ -60,7 +60,7 @@ type ComposerStore = {
   applyNearbyPageOrder: (
     rangePageIds: string[],
     orderedPageIds: string[]
-  ) => void;
+  ) => boolean;
   moveToPosition: (pageId: string, targetPosition: number) => void;
   deletePage: (pageId: string) => Promise<void>;
   markLegible: (pageId: string) => void;
@@ -79,7 +79,7 @@ const updateSessionPages = (
   pages: ComposerPage[]
 ) => {
   const session = get().session;
-  if (!session || pages === session.pages) return;
+  if (!session || pages === session.pages) return false;
   set({
     session: {
       ...session,
@@ -87,6 +87,7 @@ const updateSessionPages = (
       updatedAt: new Date().toISOString(),
     },
   });
+  return true;
 };
 
 const copyScannedPaths = async (
@@ -192,8 +193,8 @@ export const useDocumentComposerStore = create<ComposerStore>((set, get) => ({
 
   applyNearbyPageOrder: (rangePageIds, orderedPageIds) => {
     const session = get().session;
-    if (!session) return;
-    updateSessionPages(
+    if (!session) return false;
+    return updateSessionPages(
       set,
       get,
       replacePageRangeByIds(
